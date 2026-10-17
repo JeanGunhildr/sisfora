@@ -1,82 +1,101 @@
-# SISFORA
+# SISFORA — Sistem Informasi Peminjaman Ruangan Fakultas
 
-**SISFORA (Sistem Informasi Peminjaman Ruangan Fakultas)** adalah aplikasi web untuk memudahkan mahasiswa mencari ruangan, mengajukan peminjaman, melakukan persetujuan secara digital, dan memantau status pengajuan dalam satu platform terintegrasi.
+## 1. Nama Tim dan Daftar Anggota
 
-> **Status:** MVP/Hackathon. Lingkup pengembangan dibatasi pada satu fakultas. Data yang digunakan untuk demo harus diverifikasi sebelum diterapkan secara nyata.
+**Nama Tim:** Mepet Deadline
 
-## Fitur Utama
+**Daftar Anggota:**
 
-- **Pencarian Ruangan dengan AI:** Membantu pengguna mencari ruangan berdasarkan kebutuhan, kapasitas, fasilitas, tanggal, dan waktu melalui prompt bahasa alami.
-- **Visualisasi Ketersediaan:** Menampilkan kondisi ruangan berdasarkan denah dan kode warna.
-- **Penjadwalan Ruangan:** Pencarian berdasarkan hari atau tanggal, grafik pemakaian, serta fitur drag and drop untuk memilih slot waktu.
-- **Pengajuan Peminjaman:** Mendukung peminjaman untuk kepentingan umum maupun organisasi.
-- **Persetujuan Digital:** Mendukung peninjauan dan penandatanganan dokumen oleh pihak berwenang.
-- **Pemantauan Status:** Menampilkan status pengajuan, riwayat aktivitas, dan alasan penolakan.
-- **Feedback:** Pengguna dapat memberikan masukan mengenai ruangan maupun aplikasi tanpa harus meminjam ruangan terlebih dahulu.
-- **Verifikasi Akun:** Registrasi mahasiswa menggunakan bukti Kartu Tanda Mahasiswa (KTM) yang diverifikasi oleh Admin.
+1. Muhammad Rifqi Agus Setianto [H1D025113]
+2. Felix Ogen Gelael [H1D025120]
+3. Zuvika Dwi Yustina [H1D025124]
+4. Anggit Latifah Kinanti [H1D025127]
+5. Marcel Dwi Alansyah [H1D025130]
 
-## Role Pengguna
+## 2. Deskripsi Permasalahan
 
-| Role                         | Hak Akses Utama                                                                                            |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| **Mahasiswa**                | Mencari ruangan, mengajukan peminjaman, mengunggah dokumen, memantau status, dan memberikan feedback.      |
-| **Ketua Organisasi**         | Memeriksa kesesuaian anggota dan kepentingan organisasi serta menandatangani dokumen pengajuan organisasi. |
-| **Admin**                    | Memverifikasi akun serta mengelola data gedung, ruangan, fasilitas, dan jadwal.                            |
-| **Wakil Dekan III (WD III)** | Meninjau pengajuan dan memberikan keputusan akhir berupa persetujuan atau penolakan.                       |
+Proses pencarian dan peminjaman ruangan di lingkungan fakultas sering kali belum terintegrasi dengan baik. Mahasiswa kesulitan mengetahui ketersediaan ruangan, jadwal penggunaan, dan fasilitas yang tersedia. Selain itu, pengajuan surat, proses persetujuan, serta pemantauan status peminjaman berpotensi memerlukan waktu dan koordinasi secara manual.
 
-## Alur Peminjaman
+## 3. Solusi yang Dikembangkan
 
-**Peminjaman Umum**
+SISFORA merupakan aplikasi web yang mengintegrasikan pencarian ruangan, pengajuan peminjaman, persetujuan digital, dan pemantauan status dalam satu platform.
 
-Mahasiswa memilih ruangan → Mengunggah surat PDF → Pengajuan diteruskan ke WD III → WD III menyetujui atau menolak → Status diperbarui dan dapat dipantau mahasiswa.
+SISFORA memiliki empat role utama, yaitu Mahasiswa, Ketua Organisasi, Admin, dan Wakil Dekan III (WD III).
 
-**Peminjaman Organisasi**
+Fitur utama:
 
-Mahasiswa memilih ruangan → Mengunggah surat PDF → Ketua Organisasi memeriksa pengajuan dan menandatangani dokumen → Pengajuan diteruskan ke WD III → WD III memberikan keputusan akhir → Status diperbarui.
+- **Pencarian ruangan berbasis AI** berdasarkan kebutuhan, fasilitas, kapasitas, serta jadwal.
+- **Visualisasi denah ruangan** dengan kode warna: hijau untuk tersedia, kuning untuk penahanan sementara, oranye untuk pengajuan yang menunggu keputusan, dan merah untuk peminjaman yang disetujui.
+- **Penjadwalan interaktif** melalui pencarian tanggal, grafik pemakaian, dan fitur drag and drop.
+- **Pengajuan peminjaman** untuk kepentingan umum maupun organisasi.
+- **Persetujuan dan tanda tangan dokumen digital** oleh Ketua Organisasi dan WD III sesuai alur pengajuan.
+- **Pemantauan status dan riwayat aktivitas** agar mahasiswa dapat mengetahui perkembangan pengajuan.
+- **Feedback ruangan dan aplikasi** untuk mendukung evaluasi layanan.
 
-Penolakan harus disertai alasan yang dapat dibaca mahasiswa. Pengajuan yang ditolak bersifat final dan mahasiswa dapat membuat pengajuan baru.
+Alur peminjaman umum adalah Mahasiswa → WD III, sedangkan peminjaman organisasi melalui Mahasiswa → Ketua Organisasi → WD III. Sistem juga membatasi setiap mahasiswa memiliki satu pengajuan aktif dalam satu waktu untuk mengurangi penyalahgunaan.
 
-## Status dan Visualisasi Ruangan
+Lingkup pengembangan awal dibatasi pada satu fakultas.
 
-| Warna     | Keterangan                                               |
-| --------- | -------------------------------------------------------- |
-| 🟢 Hijau  | Ruangan tersedia.                                        |
-| 🟡 Kuning | Slot ditahan sementara saat pengajuan sedang dilengkapi. |
-| 🟠 Oranye | Pengajuan telah dikirim dan menunggu keputusan.          |
-| 🔴 Merah  | Peminjaman telah disetujui.                              |
+## 4. Teknologi yang Digunakan
 
-Jika mahasiswa tidak mengirim pengajuan hingga batas waktu penahanan berakhir, slot akan dilepas kembali selama tidak ada konflik jadwal.
-
-Setiap mahasiswa dibatasi memiliki **satu pengajuan peminjaman aktif** pada satu waktu untuk mencegah penyalahgunaan sistem.
-
-## Dokumen dan Riwayat Aktivitas
-
-Dokumen pengajuan diunggah dalam format PDF. Setelah penandatanganan berhasil, sistem menyimpan versi terbaru dengan menggantikan file sebelumnya untuk menghemat penyimpanan.
-
-Riwayat aktivitas tetap dicatat secara terpisah, meliputi pelaku tindakan, waktu, perubahan status, dan alasan keputusan. Penggantian dokumen dilakukan hanya setelah file baru berhasil dibuat dan divalidasi.
-
-Tanda tangan melalui aplikasi tidak otomatis merupakan tanda tangan elektronik tersertifikasi. Mekanisme penandatanganan dan integritas dokumen harus disesuaikan dengan implementasi yang digunakan.
-
-## Teknologi
-
-- **Framework:** Next.js App Router dan TypeScript
-- **UI:** Tailwind CSS v4 dan shadcn/ui
+- **Bahasa pemrograman:** TypeScript
+- **Framework:** Next.js App Router
+- **UI dan styling:** Tailwind CSS v4 dan shadcn/ui
 - **Database:** Supabase PostgreSQL
 - **Autentikasi:** Supabase Auth
-- **Penyimpanan dokumen:** Supabase Storage dengan bucket privat
+- **Penyimpanan dokumen:** Supabase Storage
 - **Integrasi sesi:** `@supabase/ssr`
-- **AI:** Layanan AI untuk menerjemahkan prompt menjadi kriteria pencarian ruangan
+- **Layanan AI:** Untuk menerjemahkan prompt pengguna menjadi kriteria pencarian ruangan.
 
-## Keamanan Sistem
+## 5. Petunjuk Instalasi dan Cara Menjalankan Aplikasi
 
-- Hak akses setiap role divalidasi di sisi server dan database menggunakan Row Level Security (RLS).
-- Mahasiswa hanya dapat mengakses pengajuan dan dokumennya sendiri.
-- Pengguna tidak dapat menentukan role Admin, Ketua Organisasi, atau WD III secara mandiri.
-- Konflik jadwal diperiksa sebelum pengajuan disimpan dan sebelum persetujuan diberikan.
-- Query hasil interpretasi AI harus divalidasi; AI tidak menentukan ketersediaan ruangan secara langsung.
-- Dokumen dan bukti KTM disimpan secara privat.
-- Perubahan status dan keputusan persetujuan dicatat untuk menjaga keterlacakan proses.
+### Prasyarat
+
+Pastikan Node.js dan npm telah terpasang pada perangkat.
+
+### Langkah instalasi
+
+1. Clone repository:
+
+   ```bash
+   git clone https://github.com/JeanGunhildr/sisfora.git
+   ```
+
+2. Masuk ke direktori proyek:
+
+   ```bash
+   cd sisfora
+   ```
+
+3. Instal dependency:
+
+   ```bash
+   npm install
+   ```
+
+4. Konfigurasikan variabel lingkungan pada file `.env.local` sesuai kredensial Supabase yang digunakan:
+
+   ```dotenv
+   NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+   ```
+
+5. Pastikan database, migrasi, kebijakan akses, dan penyimpanan dokumen Supabase telah dikonfigurasi sesuai kebutuhan aplikasi.
+
+6. Jalankan aplikasi:
+
+   ```bash
+   npm run dev
+   ```
+
+7. Buka alamat berikut pada browser:
+
+   ```text
+   http://localhost:3000
+   ```
+
+**Catatan:** Jangan mengunggah file `.env.local` atau secret key ke repository publik. Pastikan versi dependency dan perintah yang digunakan sesuai dengan konfigurasi proyek.
 
 ---
 
-**SISFORA — Satu platform untuk pencarian ruangan, peminjaman, dan persetujuan yang lebih terintegrasi.**
+**SISFORA — Mempermudah pencarian ruangan dan pengajuan peminjaman melalui sistem yang terintegrasi.**
