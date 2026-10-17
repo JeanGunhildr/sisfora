@@ -1,7 +1,2 @@
-export default function LoginPage() {
-  return (
-    <main>
-      <h1>Login SISFORA</h1>
-    </main>
-  );
-}
+import Link from 'next/link'
+export default function Page(){return <main className="auth-page"><form className="auth-card"><div className="logo-mark">S</div><span className="eyebrow">AKSES SISFORA</span><h1>Masuk ke akun Anda</h1><p>Kelola pengajuan penggunaan ruang kampus.</p><label>Email<input type="email" placeholder="nama@kampus.ac.id" required /></label><label>Kata sandi<input type="password" placeholder="Masukkan kata sandi" required /></label><button className="btn primary" type="submit">Masuk</button><small>Belum punya akun? <Link href="/register">Daftar sebagai Pemohon</Link></small></form></main>}

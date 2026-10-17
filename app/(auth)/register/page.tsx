@@ -1,7 +1,2 @@
-export default function RegisterPage() {
-  return (
-    <main>
-      <h1>Register SISFORA</h1>
-    </main>
-  );
-}
+import Link from 'next/link'
+export default function Page(){return <main className="auth-page"><form className="auth-card"><div className="logo-mark">S</div><span className="eyebrow">REGISTRASI PEMOHON</span><h1>Buat akun SISFORA</h1><p>Akun baru otomatis terdaftar sebagai Pemohon.</p><label>Nama lengkap<input required placeholder="Nama lengkap" /></label><label>Email institusi<input type="email" required placeholder="nama@kampus.ac.id" /></label><label>Kata sandi<input type="password" required placeholder="Minimal 8 karakter" /></label><button className="btn primary" type="submit">Daftar</button><small>Sudah punya akun? <Link href="/login">Masuk di sini</Link></small></form></main>}
