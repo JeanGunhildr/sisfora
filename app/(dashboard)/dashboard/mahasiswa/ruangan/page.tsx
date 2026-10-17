@@ -4,22 +4,19 @@ import React, { useState, useEffect, useMemo } from "react";
 import {
   Building2,
   Search,
-  Filter,
   Grid3X3,
   List,
   ChevronDown,
   Users,
   Maximize2,
-  Wifi,
-  Tv,
-  Wind,
-  BookOpen,
-  CheckCircle2,
+  Calendar,
   Clock,
-  XCircle,
   Loader2,
   Info,
   X,
+  RotateCcw,
+  Sparkles,
+  ArrowRight,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
@@ -28,7 +25,7 @@ import { useSearchParams } from "next/navigation";
 interface Fasilitas {
   id: string;
   nama: string;
-  ikon: string;
+  satuan?: string;
 }
 
 interface Ruangan {
@@ -38,20 +35,23 @@ interface Ruangan {
   kapasitas: number;
   luas: number;
   lantai: number;
-  status_ketersediaan: string;
+  status_ketersediaan: "tersedia" | "ditahan" | "digunakan";
   deskripsi: string | null;
   foto_url: string | null;
   gedung: {
     id: string;
     nama: string;
-    kode: string;
+    deskripsi?: string;
   } | null;
   ruangan_fasilitas: Array<{
     fasilitas: Fasilitas;
   }>;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; border: string; dot: string }> = {
+const STATUS_CONFIG: Record<
+  string,
+  { label: string; color: string; bg: string; border: string; dot: string }
+> = {
   tersedia: {
     label: "Tersedia",
     color: "text-emerald-700",
@@ -60,26 +60,19 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
     dot: "bg-emerald-500",
   },
   ditahan: {
-    label: "Ditahan",
+    label: "Ditahan / Diajukan",
     color: "text-amber-700",
     bg: "bg-amber-50",
     border: "border-amber-200",
     dot: "bg-amber-500",
   },
   digunakan: {
-    label: "Digunakan",
+    label: "Sedang Digunakan",
     color: "text-rose-700",
     bg: "bg-rose-50",
     border: "border-rose-200",
     dot: "bg-rose-500",
   },
-};
-
-const FASILITAS_ICON: Record<string, React.ElementType> = {
-  proyektor: Tv,
-  ac: Wind,
-  wifi: Wifi,
-  whiteboard: BookOpen,
 };
 
 export default function DaftarRuanganPage() {
@@ -109,26 +102,135 @@ export default function DaftarRuanganPage() {
   // Load rooms and active pengajuan
   const fetchData = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("ruangan")
-      .select(`
-        id, nama, kode, kapasitas, luas, lantai, status_ketersediaan, deskripsi, foto_url,
-        gedung(id, nama, kode),
-        ruangan_fasilitas(fasilitas(id, nama, ikon))
-      `)
-      .eq("status_aktif", true)
-      .order("nama");
+    try {
+      const [
+        { data: roomData, error: roomError },
+        { data: pengajuanData, error: pengajuanError },
+        { data: authData },
+      ] = await Promise.all([
+        supabase
+          .from("ruangan")
+          .select(`
+            id,
+            kode,
+            kapasitas,
+            luas_m2,
+            lantai,
+            deskripsi,
+            url_foto,
+            gedung:gedung_id(id, nama, deskripsi),
+            ruangan_fasilitas(
+              fasilitas:fasilitas_id(id, nama, satuan)
+            )
+          `)
+          .eq("status_aktif", true)
+          .order("kode"),
+        supabase
+          .from("pengajuan")
+          .select("id, ruangan_id, tanggal_mulai, tanggal_selesai, status")
+          .in("status", ["menunggu_upload", "menunggu_ketua", "menunggu_wd3", "disetujui"]),
+        supabase.auth.getUser(),
+      ]);
 
-    if (!error && data) setRooms(data as unknown as Ruangan[]);
-    setLoading(false);
+      if (roomError) throw roomError;
+      if (pengajuanError) throw pengajuanError;
+
+      setRawRooms(roomData || []);
+      setAllPengajuan(pengajuanData || []);
+
+      if (authData?.user) {
+        const { data: userActive } = await supabase
+          .from("pengajuan")
+          .select("id, status, nomor_pengajuan")
+          .eq("pemohon_id", authData.user.id)
+          .in("status", ["menunggu_upload", "menunggu_ketua", "menunggu_wd3"])
+          .limit(1);
+
+        if (userActive && userActive.length > 0) {
+          setHasActiveSubmission(true);
+          setActiveSubmissionNumber(userActive[0].nomor_pengajuan);
+        }
+      }
+    } catch (e) {
+      console.error("Gagal mengambil data ruangan:", e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     fetchData();
   }, []);
 
-  const gedungOptions = Array.from(new Set(rooms.map((r) => r.gedung?.nama).filter(Boolean)));
-  const lantaiOptions = Array.from(new Set(rooms.map((r) => r.lantai))).sort();
+  // Hitung status ketersediaan masing-masing ruangan secara dinamis berdasarkan filter tanggal & jam
+  const processedRooms: Ruangan[] = useMemo(() => {
+    const now = new Date();
+    const nowIso = now.toISOString();
+
+    let targetStartIso: string;
+    let targetEndIso: string;
+
+    if (filterTanggal) {
+      const mulaiStr = filterWaktuMulai ? `${filterTanggal}T${filterWaktuMulai}:00` : `${filterTanggal}T00:00:00`;
+      const selesaiStr = filterWaktuSelesai ? `${filterTanggal}T${filterWaktuSelesai}:00` : `${filterTanggal}T23:59:59`;
+      targetStartIso = new Date(mulaiStr).toISOString();
+      targetEndIso = new Date(selesaiStr).toISOString();
+    } else {
+      targetStartIso = nowIso;
+      targetEndIso = nowIso;
+    }
+
+    return rawRooms.map((r: any) => {
+      // Cek apakah ada pengajuan yang bertabrakan pada rentang waktu yang difilter
+      const conflicts = allPengajuan.filter((p: any) => {
+        if (p.ruangan_id !== r.id) return false;
+
+        const pStart = new Date(p.tanggal_mulai).getTime();
+        const pEnd = new Date(p.tanggal_selesai).getTime();
+        const tStart = new Date(targetStartIso).getTime();
+        const tEnd = new Date(targetEndIso).getTime();
+
+        if (filterTanggal) {
+          // Bentrok jika rentang waktu saling tumpang tindih
+          return pStart < tEnd && pEnd > tStart;
+        } else {
+          // Jika tanpa filter tanggal: cek apakah saat ini (now) sedang berlangsung
+          return pStart <= tStart && pEnd >= tStart;
+        }
+      });
+
+      let status: "tersedia" | "ditahan" | "digunakan" = "tersedia";
+      const hasApproved = conflicts.some((c: any) => c.status === "disetujui");
+      const hasPending = conflicts.some((c: any) =>
+        ["menunggu_upload", "menunggu_ketua", "menunggu_wd3"].includes(c.status)
+      );
+
+      if (hasApproved) {
+        status = "digunakan";
+      } else if (hasPending) {
+        status = "ditahan";
+      }
+
+      return {
+        id: r.id,
+        nama: `Ruang ${r.kode}`,
+        kode: r.kode,
+        kapasitas: r.kapasitas,
+        luas: Number(r.luas_m2) || 0,
+        lantai: r.lantai,
+        status_ketersediaan: status,
+        deskripsi: r.deskripsi,
+        foto_url: r.url_foto,
+        gedung: Array.isArray(r.gedung) ? r.gedung[0] : r.gedung,
+        ruangan_fasilitas: r.ruangan_fasilitas || [],
+      };
+    });
+  }, [rawRooms, allPengajuan, filterTanggal, filterWaktuMulai, filterWaktuSelesai]);
+
+  const gedungOptions = Array.from(
+    new Set(processedRooms.map((r) => r.gedung?.nama).filter(Boolean))
+  );
+  const lantaiOptions = Array.from(new Set(processedRooms.map((r) => r.lantai))).sort();
 
   const filtered = processedRooms.filter((r) => {
     const q = search.toLowerCase();
@@ -165,119 +267,231 @@ export default function DaftarRuanganPage() {
   return (
     <div className="space-y-6 pb-12">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Daftar Ruangan</h1>
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Daftar Ruangan Fakultas</h1>
           <p className="text-sm text-slate-500 mt-1">
-            Temukan dan ajukan peminjaman ruangan yang tersedia
+            Cek ketersediaan jadwal, fasilitas ruangan, dan ajukan peminjaman secara transparan
           </p>
         </div>
-        {/* Legend */}
-        <div className="hidden md:flex items-center gap-4 text-xs text-slate-500">
+        {/* Status Legend */}
+        <div className="flex items-center gap-4 text-xs text-slate-500">
           {Object.entries(STATUS_CONFIG).map(([key, val]) => (
             <div key={key} className="flex items-center gap-1.5">
-              <span className={`w-2 h-2 rounded-full ${val.dot}`} />
-              {val.label}
+              <span className={`w-2.5 h-2.5 rounded-full ${val.dot}`} />
+              <span className="font-medium">{val.label}</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Filters Bar */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-4 flex flex-wrap items-center gap-3">
-        {/* Search */}
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari nama atau kode ruangan..."
-            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-full text-xs placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
-          />
-        </div>
-
-        {/* Status Filter */}
-        <div className="relative">
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="appearance-none pl-4 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+      {/* Security rule notice if student has an active reservation */}
+      {hasActiveSubmission && (
+        <div className="bg-amber-50 border border-amber-200/80 rounded-3xl p-4 sm:p-5 flex items-start gap-3.5 shadow-2xs">
+          <div className="w-9 h-9 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0">
+            <Info className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="text-xs sm:text-sm font-bold text-amber-950">
+              Anda Sedang Memiliki 1 Pengajuan Peminjaman Aktif ({activeSubmissionNumber})
+            </h4>
+            <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">
+              Demi keamanan dan pencegahan pesanan ganda, setiap mahasiswa dibatasi 1 pengajuan peminjaman aktif. Tombol pengajuan akan kembali aktif setelah pengajuan sebelumnya selesai atau diputuskan.
+            </p>
+          </div>
+          <Link
+            href="/dashboard/mahasiswa/peminjaman"
+            className="text-xs font-bold text-amber-900 hover:text-amber-950 underline shrink-0 mt-0.5"
           >
-            <option value="semua">Semua Status</option>
-            <option value="tersedia">Tersedia</option>
-            <option value="ditahan">Ditahan</option>
-            <option value="digunakan">Digunakan</option>
-          </select>
-          <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            Pantau Status
+          </Link>
+        </div>
+      )}
+
+      {/* FILTER BOX KOMPREHENSIF (TANGGAL, WAKTU MULAI & SELESAI, GEDUNG, LANTAI, SEARCH) */}
+      <div className="bg-white rounded-3xl border border-slate-100 shadow-xs p-5 sm:p-6 space-y-4">
+        {/* Row 1: Filter Tanggal & Waktu (Sesuai Tugas Baru) */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-indigo-600" />
+              <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                Filter Waktu & Jadwal Peminjaman
+              </span>
+            </div>
+            {(filterTanggal || filterWaktuMulai || filterWaktuSelesai || search || filterStatus !== "semua" || filterGedung !== "semua" || filterLantai !== "semua") && (
+              <button
+                onClick={resetFilters}
+                className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset Semua Filter</span>
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Input Tanggal */}
+            <div className="relative">
+              <label className="block text-[11px] font-bold text-slate-500 mb-1">Tanggal Kegiatan</label>
+              <div className="relative">
+                <input
+                  type="date"
+                  value={filterTanggal}
+                  onChange={(e) => setFilterTanggal(e.target.value)}
+                  className="w-full pl-3 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Input Waktu Mulai */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-500 mb-1">Jam Mulai</label>
+              <input
+                type="time"
+                value={filterWaktuMulai}
+                onChange={(e) => setFilterWaktuMulai(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
+              />
+            </div>
+
+            {/* Input Waktu Selesai */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-500 mb-1">Jam Selesai</label>
+              <input
+                type="time"
+                value={filterWaktuSelesai}
+                onChange={(e) => setFilterWaktuSelesai(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
+              />
+            </div>
+          </div>
+
+          {/* Active Date/Time Banner Indicator */}
+          {filterTanggal && (
+            <div className="mt-3 p-2.5 rounded-xl bg-indigo-50/70 border border-indigo-100 flex items-center justify-between text-xs text-indigo-900">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                <span>
+                  Menampilkan ketersediaan pada:{" "}
+                  <strong>
+                    {new Date(filterTanggal).toLocaleDateString("id-ID", {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </strong>
+                  {filterWaktuMulai && filterWaktuSelesai
+                    ? ` (Pukul ${filterWaktuMulai} - ${filterWaktuSelesai} WIB)`
+                    : filterWaktuMulai
+                    ? ` (Mulai pukul ${filterWaktuMulai} WIB)`
+                    : " (Sepanjang hari)"}
+                </span>
+              </div>
+              <span className="text-[10px] font-medium text-indigo-600">
+                Pilihan waktu akan otomatis terbawa ke formulir peminjaman
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* Lantai Filter */}
-        <div className="relative">
-          <select
-            value={filterLantai}
-            onChange={(e) => setFilterLantai(e.target.value)}
-            className="appearance-none pl-4 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-          >
-            <option value="semua">Semua Lantai</option>
-            {lantaiOptions.map((l) => (
-              <option key={l} value={String(l)}>
-                Lantai {l}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-        </div>
+        {/* Row 2: Search, Status, Gedung, Lantai, View Toggle */}
+        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center gap-3">
+          {/* Search */}
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Cari nama atau kode ruangan..."
+              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-full text-xs placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-slate-800"
+            />
+          </div>
 
-        {/* Gedung Filter */}
-        {gedungOptions.length > 0 && (
+          {/* Status Filter */}
           <div className="relative">
             <select
-              value={filterGedung}
-              onChange={(e) => setFilterGedung(e.target.value)}
-              className="appearance-none pl-4 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="appearance-none pl-4 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
             >
-              <option value="semua">Semua Gedung</option>
-              {gedungOptions.map((g) => (
-                <option key={g} value={g!}>
-                  {g}
+              <option value="semua">Semua Status</option>
+              <option value="tersedia">Tersedia (Hijau)</option>
+              <option value="ditahan">Ditahan / Diajukan (Kuning)</option>
+              <option value="digunakan">Sedang Digunakan (Merah)</option>
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+
+          {/* Lantai Filter */}
+          <div className="relative">
+            <select
+              value={filterLantai}
+              onChange={(e) => setFilterLantai(e.target.value)}
+              className="appearance-none pl-4 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+            >
+              <option value="semua">Semua Lantai</option>
+              {lantaiOptions.map((l) => (
+                <option key={l} value={String(l)}>
+                  Lantai {l}
                 </option>
               ))}
             </select>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
-        )}
 
-        {/* View Toggle */}
-        <div className="ml-auto flex items-center gap-1 p-1 bg-slate-100 rounded-full">
-          <button
-            onClick={() => setView("grid")}
-            className={`p-1.5 rounded-full transition-colors cursor-pointer ${
-              view === "grid" ? "bg-white text-blue-600 shadow-xs" : "text-slate-400 hover:text-slate-700"
-            }`}
-          >
-            <Grid3X3 size={14} />
-          </button>
-          <button
-            onClick={() => setView("list")}
-            className={`p-1.5 rounded-full transition-colors cursor-pointer ${
-              view === "list" ? "bg-white text-blue-600 shadow-xs" : "text-slate-400 hover:text-slate-700"
-            }`}
-          >
-            <List size={14} />
-          </button>
+          {/* Gedung Filter */}
+          {gedungOptions.length > 0 && (
+            <div className="relative">
+              <select
+                value={filterGedung}
+                onChange={(e) => setFilterGedung(e.target.value)}
+                className="appearance-none pl-4 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+              >
+                <option value="semua">Semua Gedung</option>
+                {gedungOptions.map((g) => (
+                  <option key={g} value={g!}>
+                    {g}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+          )}
+
+          {/* View Toggle */}
+          <div className="ml-auto flex items-center gap-1 p-1 bg-slate-100 rounded-full">
+            <button
+              onClick={() => setView("grid")}
+              className={`p-1.5 rounded-full transition-colors cursor-pointer ${
+                view === "grid" ? "bg-white text-indigo-600 shadow-xs" : "text-slate-400 hover:text-slate-700"
+              }`}
+            >
+              <Grid3X3 size={14} />
+            </button>
+            <button
+              onClick={() => setView("list")}
+              className={`p-1.5 rounded-full transition-colors cursor-pointer ${
+                view === "list" ? "bg-white text-indigo-600 shadow-xs" : "text-slate-400 hover:text-slate-700"
+              }`}
+            >
+              <List size={14} />
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Results count */}
       <p className="text-xs text-slate-500 font-medium px-1">
-        {loading ? "Memuat..." : `${filtered.length} ruangan ditemukan`}
+        {loading ? "Memeriksa ketersediaan jadwal ruangan..." : `${filtered.length} ruangan sesuai kriteria`}
       </p>
 
       {/* Room Grid / List */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+          <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
         </div>
       ) : filtered.length === 0 ? (
         <div className="bg-white rounded-3xl border border-slate-100 p-16 text-center">
@@ -286,7 +500,7 @@ export default function DaftarRuanganPage() {
           <p className="text-xs text-slate-400 mt-1">Coba ubah tanggal, jam kegiatan, atau kriteria pencarian Anda.</p>
         </div>
       ) : view === "grid" ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
           {filtered.map((room) => {
             const status = STATUS_CONFIG[room.status_ketersediaan] || STATUS_CONFIG.tersedia;
             const fasilitasList = room.ruangan_fasilitas?.map((rf: any) => rf.fasilitas?.nama).filter(Boolean) || [];
@@ -294,17 +508,17 @@ export default function DaftarRuanganPage() {
             return (
               <div
                 key={room.id}
-                className="bg-white rounded-2xl border border-slate-100 shadow-xs hover:shadow-md hover:border-blue-200 transition-all overflow-hidden flex flex-col"
+                className="bg-white rounded-3xl border border-slate-100 shadow-xs hover:shadow-md hover:border-indigo-200 transition-all overflow-hidden flex flex-col group"
               >
                 {/* Photo / Placeholder */}
-                <div className="h-36 bg-gradient-to-br from-blue-100 to-sky-50 flex items-center justify-center relative">
+                <div className="h-44 bg-gradient-to-br from-indigo-50 to-blue-50 flex items-center justify-center relative overflow-hidden">
                   {room.foto_url ? (
-                    <img src={room.foto_url} alt={room.nama} className="w-full h-full object-cover" />
+                    <img src={room.foto_url} alt={room.nama} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                   ) : (
-                    <Building2 className="w-12 h-12 text-blue-200" />
+                    <Building2 className="w-12 h-12 text-indigo-200" />
                   )}
                   <div
-                    className={`absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold border ${status.bg} ${status.color} ${status.border}`}
+                    className={`absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${status.bg} ${status.color} ${status.border} shadow-2xs`}
                   >
                     <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
                     {status.label}
@@ -315,70 +529,78 @@ export default function DaftarRuanganPage() {
                 </div>
 
                 {/* Card Body */}
-                <div className="p-4 flex-1 flex flex-col">
+                <div className="p-5 flex-1 flex flex-col">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div>
-                      <h3 className="text-sm font-bold text-slate-800 leading-tight">{room.nama}</h3>
-                      <p className="text-[10px] font-mono text-slate-400 mt-0.5">{room.kode}</p>
+                      <h3 className="text-sm font-bold text-slate-800 leading-tight group-hover:text-indigo-600 transition-colors">
+                        {room.nama}
+                      </h3>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        {room.gedung?.nama || "Fakultas"} • Lantai {room.lantai}
+                      </p>
                     </div>
                     <button
                       onClick={() => setSelectedRoom(room)}
-                      className="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
+                      className="text-slate-400 hover:text-indigo-600 transition-colors cursor-pointer p-1"
+                      title="Lihat Detail Fasilitas"
                     >
                       <Info size={16} />
                     </button>
                   </div>
 
-                  <div className="flex items-center gap-3 text-[11px] text-slate-500 mb-3">
+                  <p className="text-xs text-slate-500 line-clamp-2 mt-1 leading-relaxed">
+                    {room.deskripsi || "Ruangan perkuliahan dan kegiatan akademik fakultas."}
+                  </p>
+
+                  <div className="flex items-center gap-3 text-xs text-slate-500 font-medium my-3">
                     <span className="flex items-center gap-1">
-                      <Users size={11} />
+                      <Users size={12} className="text-slate-400" />
                       {room.kapasitas} orang
                     </span>
                     <span className="flex items-center gap-1">
-                      <Maximize2 size={11} />
+                      <Maximize2 size={12} className="text-slate-400" />
                       {room.luas} m²
                     </span>
-                    <span>Lantai {room.lantai}</span>
                   </div>
-
-                  {room.gedung && (
-                    <p className="text-[10px] text-slate-400 mb-3">{room.gedung.nama}</p>
-                  )}
 
                   {/* Fasilitas */}
                   {fasilitasList.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mb-3">
-                      {fasilitasList.slice(0, 3).map((f) => (
+                    <div className="flex flex-wrap gap-1.5 mb-4">
+                      {fasilitasList.slice(0, 3).map((fName: string, idx: number) => (
                         <span
-                          key={f.id}
-                          className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-medium rounded-full"
+                          key={idx}
+                          className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-medium rounded-md border border-indigo-100"
                         >
                           {fName}
                         </span>
                       ))}
                       {fasilitasList.length > 3 && (
-                        <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-medium rounded-full">
+                        <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-medium rounded-md">
                           +{fasilitasList.length - 3}
                         </span>
                       )}
                     </div>
                   )}
 
-                  {/* Action Button */}
-                  <div className="mt-auto">
-                    {room.status_ketersediaan === "tersedia" ? (
+                  {/* Action Button: Auto membawa parameter filter tanggal & jam */}
+                  <div className="mt-auto pt-2">
+                    {hasActiveSubmission ? (
+                      <span className="block w-full py-2.5 text-center rounded-2xl text-xs font-semibold bg-slate-100 text-slate-400 cursor-not-allowed">
+                        Ada Pengajuan Aktif
+                      </span>
+                    ) : room.status_ketersediaan === "tersedia" ? (
                       <Link
-                        href={`/dashboard/mahasiswa/peminjaman/baru?ruangan=${room.id}`}
-                        className="block w-full py-2 text-center rounded-xl text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                        href={getBookingUrl(room.id)}
+                        className="block w-full py-2.5 text-center rounded-2xl text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm transition-all"
                       >
                         Ajukan Peminjaman
                       </Link>
                     ) : (
                       <button
                         disabled
-                        className="block w-full py-2 text-center rounded-xl text-xs font-semibold bg-slate-100 text-slate-400 cursor-not-allowed"
+                        className="block w-full py-2.5 text-center rounded-2xl text-xs font-semibold bg-slate-100 text-slate-400 cursor-not-allowed"
                       >
-                        {room.status_ketersediaan === "ditahan" ? "Sedang Diproses" : "Tidak Tersedia"}
+                        {room.status_ketersediaan === "ditahan" ? "Sedang Diajukan" : "Tidak Tersedia"}
                       </button>
                     )}
                   </div>
@@ -389,16 +611,16 @@ export default function DaftarRuanganPage() {
         </div>
       ) : (
         /* List View */
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-xs overflow-hidden">
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-2xs overflow-hidden">
           <table className="w-full text-xs">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-semibold uppercase tracking-wider">
-                <th className="py-3 px-5 text-left">Ruangan</th>
-                <th className="py-3 px-4 text-left">Gedung</th>
-                <th className="py-3 px-4 text-left">Lantai</th>
-                <th className="py-3 px-4 text-left">Kapasitas</th>
-                <th className="py-3 px-4 text-left">Status</th>
-                <th className="py-3 px-5 text-right">Aksi</th>
+                <th className="py-3.5 px-5 text-left">Ruangan</th>
+                <th className="py-3.5 px-4 text-left">Gedung</th>
+                <th className="py-3.5 px-4 text-left">Lantai</th>
+                <th className="py-3.5 px-4 text-left">Kapasitas</th>
+                <th className="py-3.5 px-4 text-left">Status</th>
+                <th className="py-3.5 px-5 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -406,14 +628,14 @@ export default function DaftarRuanganPage() {
                 const status = STATUS_CONFIG[room.status_ketersediaan] || STATUS_CONFIG.tersedia;
                 return (
                   <tr key={room.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="py-3.5 px-5">
-                      <p className="font-semibold text-slate-800">{room.nama}</p>
+                    <td className="py-4 px-5">
+                      <p className="font-bold text-slate-800">{room.nama}</p>
                       <p className="text-slate-400 font-mono text-[10px]">{room.kode}</p>
                     </td>
-                    <td className="py-3.5 px-4 text-slate-600">{room.gedung?.nama || "-"}</td>
-                    <td className="py-3.5 px-4 text-slate-600">Lantai {room.lantai}</td>
-                    <td className="py-3.5 px-4 text-slate-600">{room.kapasitas} orang</td>
-                    <td className="py-3.5 px-4">
+                    <td className="py-4 px-4 text-slate-600">{room.gedung?.nama || "-"}</td>
+                    <td className="py-4 px-4 text-slate-600">Lantai {room.lantai}</td>
+                    <td className="py-4 px-4 text-slate-600">{room.kapasitas} orang</td>
+                    <td className="py-4 px-4">
                       <span
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${status.bg} ${status.color} ${status.border}`}
                       >
@@ -421,17 +643,21 @@ export default function DaftarRuanganPage() {
                         {status.label}
                       </span>
                     </td>
-                    <td className="py-3.5 px-5 text-right">
-                      {room.status_ketersediaan === "tersedia" ? (
+                    <td className="py-4 px-5 text-right">
+                      {hasActiveSubmission ? (
+                        <span className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-400">
+                          Terkunci
+                        </span>
+                      ) : room.status_ketersediaan === "tersedia" ? (
                         <Link
-                          href={`/dashboard/mahasiswa/peminjaman/baru?ruangan=${room.id}`}
-                          className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                          href={getBookingUrl(room.id)}
+                          className="px-3.5 py-1.5 rounded-full text-[11px] font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-2xs"
                         >
                           Ajukan
                         </Link>
                       ) : (
                         <span className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-400">
-                          Tidak Tersedia
+                          {room.status_ketersediaan === "ditahan" ? "Diajukan" : "Dipakai"}
                         </span>
                       )}
                     </td>
@@ -450,11 +676,11 @@ export default function DaftarRuanganPage() {
           onClick={() => setSelectedRoom(null)}
         >
           <div
-            className="bg-white rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden"
+            className="bg-white rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden animate-in fade-in zoom-in-95"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="h-40 bg-gradient-to-br from-blue-100 to-sky-50 relative flex items-center justify-center">
+            <div className="h-44 bg-gradient-to-br from-indigo-100 to-sky-50 relative flex items-center justify-center">
               {selectedRoom.foto_url ? (
                 <img
                   src={selectedRoom.foto_url}
@@ -462,7 +688,7 @@ export default function DaftarRuanganPage() {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <Building2 className="w-16 h-16 text-blue-200" />
+                <Building2 className="w-16 h-16 text-indigo-300" />
               )}
               <button
                 onClick={() => setSelectedRoom(null)}
@@ -477,7 +703,7 @@ export default function DaftarRuanganPage() {
                 <div className="flex items-start justify-between">
                   <div>
                     <h2 className="text-lg font-bold text-slate-900">{selectedRoom.nama}</h2>
-                    <p className="text-xs font-mono text-slate-400">{selectedRoom.kode}</p>
+                    <p className="text-xs text-slate-500">{selectedRoom.gedung?.nama} • Lantai {selectedRoom.lantai}</p>
                   </div>
                   <span
                     className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${
@@ -498,7 +724,7 @@ export default function DaftarRuanganPage() {
               <div className="grid grid-cols-3 gap-3">
                 <div className="text-center p-3 bg-slate-50 rounded-2xl">
                   <p className="text-xl font-extrabold text-slate-800">{selectedRoom.kapasitas}</p>
-                  <p className="text-[10px] text-slate-500 mt-0.5">Kapasitas</p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">Kapasitas (mhs)</p>
                 </div>
                 <div className="text-center p-3 bg-slate-50 rounded-2xl">
                   <p className="text-xl font-extrabold text-slate-800">{selectedRoom.luas}</p>
@@ -510,24 +736,17 @@ export default function DaftarRuanganPage() {
                 </div>
               </div>
 
-              {selectedRoom.gedung && (
-                <p className="text-xs text-slate-500">
-                  <span className="font-semibold text-slate-700">Gedung:</span>{" "}
-                  {selectedRoom.gedung.nama} ({selectedRoom.gedung.kode})
-                </p>
-              )}
-
               {/* Fasilitas */}
               {selectedRoom.ruangan_fasilitas.length > 0 && (
                 <div>
-                  <p className="text-xs font-semibold text-slate-700 mb-2">Fasilitas:</p>
+                  <p className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Fasilitas Ruangan:</p>
                   <div className="flex flex-wrap gap-2">
                     {selectedRoom.ruangan_fasilitas.map((rf: any, idx: number) => (
                       <span
-                        key={rf.fasilitas.id}
-                        className="px-3 py-1 bg-blue-50 text-blue-700 text-[11px] font-medium rounded-full border border-blue-100"
+                        key={idx}
+                        className="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-semibold rounded-xl border border-indigo-100"
                       >
-                        {rf.fasilitas.nama}
+                        {rf.fasilitas?.nama}
                       </span>
                     ))}
                   </div>
@@ -541,10 +760,10 @@ export default function DaftarRuanganPage() {
                 >
                   Tutup
                 </button>
-                {selectedRoom.status_ketersediaan === "tersedia" && (
+                {!hasActiveSubmission && selectedRoom.status_ketersediaan === "tersedia" && (
                   <Link
-                    href={`/dashboard/mahasiswa/peminjaman/baru?ruangan=${selectedRoom.id}`}
-                    className="flex-1 py-2.5 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 text-center transition-colors"
+                    href={getBookingUrl(selectedRoom.id)}
+                    className="flex-1 py-2.5 rounded-2xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 text-center transition-colors shadow-sm"
                   >
                     Ajukan Peminjaman
                   </Link>
