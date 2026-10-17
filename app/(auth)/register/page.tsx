@@ -45,7 +45,7 @@ export default function RegisterPage() {
     }
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
+const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
 
@@ -94,6 +94,8 @@ export default function RegisterPage() {
       }
 
       // 2. Registrasi Akun Auth di Supabase
+      // Trigger database Anda akan otomatis membaca options.data dan 
+      // memasukkannya ke tabel public.users secara aman di sisi server.
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -111,18 +113,8 @@ export default function RegisterPage() {
         throw new Error(authError.message);
       }
 
-      // 3. Fallback upsert ke public.users
-      if (authData.user) {
-        await supabase.from("users").upsert({
-          id: authData.user.id,
-          nama,
-          email,
-          nim,
-          role: "mahasiswa",
-          url_ktm: publicUrl || null,
-          status_verifikasi: "menunggu",
-        });
-      }
+      // 3. (DIHAPUS) Tidak perlu upsert manual ke public.users di sini 
+      // karena sudah ditangani sepenuhnya oleh Database Trigger.
 
       setSuccess(true);
     } catch (err: unknown) {
@@ -132,7 +124,7 @@ export default function RegisterPage() {
       setLoading(false);
     }
   };
-
+  
   return (
     <div className="min-h-screen bg-[#F0F4FA] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 antialiased font-sans">
       <div className="max-w-lg w-full mx-auto">
