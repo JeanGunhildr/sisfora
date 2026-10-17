@@ -33,9 +33,14 @@ EXCEPTION WHEN duplicate_object THEN null;
 END $$;
 
 DO $$ BEGIN
+  CREATE TYPE public.status_penahanan AS ENUM ('aktif', 'selesai', 'kedaluwarsa', 'dibatalkan');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
   CREATE TYPE public.status_dokumen AS ENUM (
     'diunggah',
-    'ditandatangani_ketua',
+    'ditandatangani_organisasi',
     'ditandatangani_wd3',
     'final'
   );

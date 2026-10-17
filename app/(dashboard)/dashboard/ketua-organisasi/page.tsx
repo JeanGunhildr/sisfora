@@ -3,57 +3,33 @@ import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import Link from "next/link";
-import { PenTool, Building2, Clock, CheckCircle2, ArrowRight, FileText, Calendar } from "lucide-react";
+import { PenTool, Building2, Clock, CheckCircle2, ArrowRight } from "lucide-react";
 
 export default async function KetuaOrganisasiDashboard() {
   const { user, profile } = await requireRole(["ketua_organisasi"]);
   const supabase = await createClient();
 
-  // Fetch organisasi yang dipimpin ketua ini
+  // Fetch organisasi info
   const { data: org } = await supabase
     .from("organisasi")
     .select("id, nama, singkatan")
     .eq("ketua_id", user.id)
     .single();
 
-  // Fetch requests pending ketua organisasi approval dari tabel pengajuan
-  let query = supabase
-    .from("pengajuan")
+  // Fetch requests pending ketua organisasi approval
+  const { data: pendingRequests } = await supabase
+    .from("peminjaman")
     .select(`
-      id,
-      nomor_pengajuan,
-      status,
-      jenis_peminjaman,
-      organisasi_id,
-      nama_kegiatan,
-      deskripsi_kegiatan,
-      tanggal_mulai,
-      tanggal_selesai,
-      created_at,
-      pemohon:users!pengajuan_pemohon_id_fkey (nama, nim, email),
-      ruangan:ruangan!pengajuan_ruangan_id_fkey (
-        kode,
-        lantai,
-        gedung:gedung!ruangan_gedung_id_fkey (nama)
-      ),
-      dokumen_pengajuan:dokumen_pengajuan!dokumen_pengajuan_pengajuan_id_fkey (
-        id,
-        url_file,
-        nama_file,
-        status_dokumen
-      )
+      id, status, kategori, tanggal_mulai, tanggal_selesai, waktu_mulai, waktu_selesai,
+      keperluan, created_at,
+      pemohon:users!pemohon_id(nama, nim, email),
+      ruangan(nama, kode, lantai, gedung(nama))
     `)
-    .eq("jenis_peminjaman", "organisasi")
+    .eq("kategori", "organisasi")
     .eq("status", "menunggu_ketua")
     .order("created_at", { ascending: false });
 
-  if (org?.id) {
-    query = query.eq("organisasi_id", org.id);
-  }
-
-  const { data: pendingRequests } = await query;
-  const list = pendingRequests || [];
-  const totalPending = list.length;
+  const totalPending = pendingRequests?.length ?? 0;
 
   return (
     <div className="space-y-8">
@@ -61,7 +37,6 @@ export default async function KetuaOrganisasiDashboard() {
       <DashboardHeader
         nama={profile.nama}
         roleTitle={`Ketua Organisasi ${org?.singkatan ? `(${org.singkatan})` : ""}`}
-        role="ketua_organisasi"
       />
 
       {/* Hero Banner */}
@@ -75,7 +50,7 @@ export default async function KetuaOrganisasiDashboard() {
             Persetujuan Proposal Acara Organisasi
           </h1>
           <p className="mt-2 text-xs sm:text-sm text-indigo-100 font-normal leading-relaxed">
-            Periksa kelengkapan permohonan anggota organisasi Anda dan bubuhkan tanda tangan digital sebelum surat diteruskan ke Wakil Dekan 3.
+            Periksa kesesuaian anggota dan keperluan acara sebelum menandatangani surat permohonan untuk diteruskan ke Wakil Dekan 3.
           </p>
         </div>
       </div>
@@ -110,19 +85,19 @@ export default async function KetuaOrganisasiDashboard() {
             Daftar Pengajuan Anggota Organisasi
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Tinjau keperluan kegiatan dan tandatangani surat untuk diteruskan ke Wakil Dekan 3
+            Tinjau keperluan kegiatan dan tandatangani secara digital untuk diteruskan ke WD3
           </p>
         </div>
 
         <div className="divide-y divide-slate-100">
-          {list.length === 0 ? (
+          {!pendingRequests || pendingRequests.length === 0 ? (
             <div className="p-12 text-center text-slate-400">
               <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-2" />
               <p className="font-semibold text-slate-700 text-sm">Tidak ada pengajuan tertunda</p>
               <p className="text-xs text-slate-400 mt-1">Semua surat organisasi telah Anda proses.</p>
             </div>
           ) : (
-            list.map((req: any) => (
+            pendingRequests.map((req: any) => (
               <div
                 key={req.id}
                 className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50/50 transition-colors"
@@ -130,7 +105,7 @@ export default async function KetuaOrganisasiDashboard() {
                 <div className="space-y-1.5 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-violet-50 text-violet-700">
-                      {req.nomor_pengajuan}
+                      Organisasi
                     </span>
                     <span className="text-xs font-semibold text-slate-800">
                       {req.pemohon?.nama} ({req.pemohon?.nim || "-"})
@@ -138,23 +113,17 @@ export default async function KetuaOrganisasiDashboard() {
                   </div>
 
                   <h3 className="text-sm font-bold text-slate-900">
-                    {req.nama_kegiatan}
+                    {req.ruangan?.nama} — {req.ruangan?.gedung?.nama} (Lt. {req.ruangan?.lantai})
                   </h3>
 
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
-                    <span className="flex items-center gap-1">
-                      <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                      Ruang {req.ruangan?.kode} — {req.ruangan?.gedung?.nama || "Gedung"} (Lt. {req.ruangan?.lantai})
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                      {new Date(req.tanggal_mulai).toLocaleDateString("id-ID", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </span>
-                  </div>
+                  <p className="text-xs text-slate-500">
+                    Kegiatan: <strong className="text-slate-700">{req.keperluan}</strong> • Waktu:{" "}
+                    {new Date(req.tanggal_mulai).toLocaleDateString("id-ID", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </p>
                 </div>
 
                 <Link

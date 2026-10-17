@@ -82,14 +82,14 @@ export default function MonitoringPeminjamanView() {
         .from("pengajuan")
         .select(`
           *,
-          pemohon:users!pengajuan_pemohon_id_fkey (nama, nim, email),
-          ruangan:ruangan!pengajuan_ruangan_id_fkey (
+          pemohon:pemohon_id (nama, nim, email),
+          ruangan:ruangan_id (
             kode,
             kapasitas,
-            gedung:gedung!ruangan_gedung_id_fkey (nama)
+            gedung:gedung_id (nama)
           ),
-          organisasi:organisasi!pengajuan_organisasi_id_fkey (nama, singkatan),
-          dokumen_pengajuan:dokumen_pengajuan!dokumen_pengajuan_pengajuan_id_fkey (id, url_file, nama_file, status_dokumen)
+          organisasi:organisasi_id (nama, singkatan),
+          dokumen_pengajuan (id, url_file, nama_file, status_dokumen)
         `)
         .order("created_at", { ascending: false });
 

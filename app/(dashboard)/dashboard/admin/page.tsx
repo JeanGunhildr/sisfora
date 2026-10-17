@@ -66,8 +66,8 @@ export default async function AdminDashboard() {
       tanggal_mulai,
       tanggal_selesai,
       created_at,
-      pemohon:users!pengajuan_pemohon_id_fkey(nama, nim),
-      ruangan:ruangan!pengajuan_ruangan_id_fkey(kode, gedung:gedung!ruangan_gedung_id_fkey(nama))
+      pemohon:pemohon_id(nama, nim),
+      ruangan:ruangan_id(kode, gedung:gedung_id(nama))
     `)
     .order("created_at", { ascending: false })
     .limit(5);

@@ -46,27 +46,14 @@ export default async function MahasiswaDashboard() {
 
   const nowIso = new Date().toISOString();
 
-  // 1. Fetch room stats (ruangan aktif)
-  const { data: ruangan } = await supabase
-    .from("ruangan")
-    .select("id, kode, status_aktif, kapasitas, lantai, luas_m2, url_foto, gedung:gedung!ruangan_gedung_id_fkey(nama)")
-    .eq("status_aktif", true)
-    .order("kapasitas", { ascending: false });
-
+  // 1. Fetch room stats
+  const { data: ruangan } = await supabase.from("ruangan").select("id, status_ketersediaan");
   const totalRuangan = ruangan?.length ?? 0;
+  const tersedia = ruangan?.filter((r) => r.status_ketersediaan === "tersedia").length ?? 0;
+  const ditahan = ruangan?.filter((r) => r.status_ketersediaan === "ditahan").length ?? 0;
+  const digunakan = ruangan?.filter((r) => r.status_ketersediaan === "digunakan").length ?? 0;
 
-  // 2. Fetch stats pengajuan untuk mahasiswa ini
-  const { data: myPengajuans } = await supabase
-    .from("pengajuan")
-    .select("id, status")
-    .eq("pemohon_id", user.id);
-
-  const pengajuanDiproses = myPengajuans?.filter((p) =>
-    ["menunggu_upload", "menunggu_ketua", "menunggu_wd3"].includes(p.status)
-  ).length ?? 0;
-  const pengajuanDisetujui = myPengajuans?.filter((p) => p.status === "disetujui").length ?? 0;
-
-  // 3. Fetch total gedung
+  // 2. Fetch total gedung
   const { count: totalGedung } = await supabase
     .from("gedung")
     .select("id", { count: "exact", head: true })
@@ -74,42 +61,48 @@ export default async function MahasiswaDashboard() {
 
   const totalGedung = totalGedungCount ?? 2;
 
-  // 4. Fetch active loan for this student
+  // 3. Fetch active peminjaman for this student
   const { data: activeLoans } = await supabase
-    .from("pengajuan")
+    .from("peminjaman")
     .select(`
-      id, status, jenis_peminjaman, tanggal_mulai, tanggal_selesai,
-      nama_kegiatan, created_at,
-      ruangan:ruangan!pengajuan_ruangan_id_fkey (
-        kode, lantai, url_foto, gedung:gedung!ruangan_gedung_id_fkey(nama)
-      )
+      id, status, kategori, tanggal_mulai, tanggal_selesai, waktu_mulai, waktu_selesai,
+      keperluan, created_at,
+      ruangan(nama, kode, lantai, foto_url, gedung(nama))
     `)
     .eq("pemohon_id", user.id)
-    .not("status", "in", '("ditolak_ketua","ditolak_wd3","dibatalkan","kedaluwarsa")')
+    .not("status", "in", '("selesai","ditolak")')
     .order("created_at", { ascending: false })
     .limit(1);
 
   const activeLoan = userLoans?.[0] as any || null;
 
-  // 5. Recommended rooms (top 3 ruangan berkapasitas terbesar)
-  const recommendedRooms = (ruangan || []).slice(0, 3);
+  // 4. Fetch recommended rooms for "For You" section
+  const { data: recommendedRooms } = await supabase
+    .from("ruangan")
+    .select(`
+      id, nama, kode, kapasitas, luas, lantai, status_ketersediaan, foto_url,
+      gedung(nama)
+    `)
+    .eq("status_aktif", true)
+    .order("kapasitas", { ascending: false })
+    .limit(3);
 
   const STATUS_STEP_PERCENT: Record<string, number> = {
-    menunggu_upload: 25,
-    menunggu_ketua: 50,
-    menunggu_wd3: 75,
-    disetujui: 100,
+    menunggu_ketua: 25,
+    disetujui_ketua: 50,
+    menunggu_wd3: 70,
+    disetujui_wd3: 90,
+    berlangsung: 100,
   };
 
   const STATUS_LABEL: Record<string, string> = {
-    menunggu_upload: "Menunggu Unggah Surat",
-    menunggu_ketua: "Menunggu Tanda Tangan Ketua Org",
     menunggu_wd3: "Menunggu Persetujuan WD3",
-    disetujui: "Disetujui & Sah",
-    ditolak_ketua: "Ditolak Ketua Org",
-    ditolak_wd3: "Ditolak WD3",
-    dibatalkan: "Dibatalkan",
-    kedaluwarsa: "Kedaluwarsa",
+    menunggu_ketua: "Menunggu Tanda Tangan Ketua Org",
+    disetujui_ketua: "Disetujui Ketua Org • Meneruskan ke WD3",
+    disetujui_wd3: "Disetujui WD3 • Siap Digunakan",
+    berlangsung: "Sedang Berlangsung",
+    selesai: "Selesai",
+    ditolak: "Pengajuan Ditolak",
   };
 
   return (
@@ -224,31 +217,31 @@ export default async function MahasiswaDashboard() {
           </div>
           <p className="text-xs font-medium text-slate-400">Ruangan Tersedia</p>
           <p className="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight mt-1">
-            {totalRuangan}
+            {tersedia}
           </p>
           <p className="text-[11px] text-emerald-600 font-medium mt-1">Siap untuk dipinjam</p>
         </div>
 
-        {/* Card 2: Pengajuan Aktif */}
+        {/* Card 2: Pengajuan Berjalan */}
         <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-2xs hover:shadow-xs transition-shadow">
           <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-3">
             <Award className="w-5 h-5" />
           </div>
-          <p className="text-xs font-medium text-slate-400">Pengajuan Diproses</p>
+          <p className="text-xs font-medium text-slate-400">Sedang Diproses</p>
           <p className="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight mt-1">
-            {pengajuanDiproses}
+            {ditahan}
           </p>
           <p className="text-[11px] text-amber-600 font-medium mt-1">Pengajuan & penahanan jadwal</p>
         </div>
 
-        {/* Card 3: Peminjaman Disetujui */}
+        {/* Card 3: Ruangan Digunakan */}
         <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-2xs hover:shadow-xs transition-shadow">
           <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
             <Clock className="w-5 h-5" />
           </div>
-          <p className="text-xs font-medium text-slate-400">Peminjaman Disetujui</p>
+          <p className="text-xs font-medium text-slate-400">Sedang Digunakan</p>
           <p className="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight mt-1">
-            {pengajuanDisetujui}
+            {digunakan}
           </p>
         </div>
 
@@ -289,10 +282,10 @@ export default async function MahasiswaDashboard() {
           <div className="bg-white rounded-3xl border border-slate-100 p-5 sm:p-6 shadow-2xs flex flex-col md:flex-row items-start md:items-center gap-5">
             {/* Room Image Thumbnail */}
             <div className="w-full md:w-44 h-28 rounded-2xl overflow-hidden bg-slate-100 relative shrink-0">
-              {activeLoan.ruangan?.url_foto ? (
+              {activeLoan.ruangan?.foto_url ? (
                 <img
-                  src={activeLoan.ruangan.url_foto}
-                  alt={activeLoan.ruangan?.kode || "Ruangan"}
+                  src={activeLoan.ruangan.foto_url}
+                  alt={activeLoan.ruangan.nama}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -309,7 +302,7 @@ export default async function MahasiswaDashboard() {
             <div className="flex-1 min-w-0 w-full">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200/60 uppercase px-2 py-0.5 rounded-md tracking-wider">
-                  {activeLoan.jenis_peminjaman === "organisasi" ? "Kegiatan Organisasi" : "Kegiatan Umum"}
+                  {activeLoan.kategori === "organisasi" ? "Kegiatan Organisasi" : "Kegiatan Umum"}
                 </span>
               </div>
 
@@ -340,7 +333,7 @@ export default async function MahasiswaDashboard() {
               </div>
 
               <h3 className="text-base font-bold text-slate-900 mt-1 truncate">
-                Ruang {activeLoan.ruangan?.kode || "-"} — {activeLoan.nama_kegiatan}
+                {activeLoan.ruangan?.nama || "Ruangan Peminjaman"}
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
                 Tahap Saat Ini: <strong className="text-indigo-600">{STATUS_LABEL[activeLoan.status] || activeLoan.status}</strong>
@@ -439,11 +432,10 @@ export default async function MahasiswaDashboard() {
                 >
                   {/* Thumbnail Foto */}
                   <div className="h-44 bg-slate-100 relative overflow-hidden">
-                    {room.url_foto ? (
-                    {room.url_foto ? (
+                    {room.foto_url ? (
                       <img
-                        src={room.url_foto}
-                        alt={room.kode}
+                        src={room.foto_url}
+                        alt={room.nama}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     ) : (
@@ -451,8 +443,14 @@ export default async function MahasiswaDashboard() {
                         <Building2 className="w-12 h-12" />
                       </div>
                     )}
-                    <span className="absolute top-3 right-3 text-[10px] font-bold px-2.5 py-1 rounded-full border border-white/60 shadow-2xs bg-emerald-500 text-white">
-                      Tersedia
+                    <span
+                      className={`absolute top-3 right-3 text-[10px] font-bold px-2.5 py-1 rounded-full border border-white/60 shadow-2xs ${
+                        room.status_ketersediaan === "tersedia"
+                          ? "bg-emerald-500 text-white"
+                          : "bg-amber-500 text-white"
+                      }`}
+                    >
+                      {room.status_ketersediaan === "tersedia" ? "Tersedia" : "Ditahan"}
                     </span>
                   </div>
 
@@ -466,8 +464,7 @@ export default async function MahasiswaDashboard() {
                     </div>
 
                     <h3 className="text-sm font-bold text-slate-800 leading-snug group-hover:text-indigo-600 transition-colors">
-                      Ruang {room.kode}
-                      Ruang {room.kode}
+                      {room.nama}
                     </h3>
 
                     <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
