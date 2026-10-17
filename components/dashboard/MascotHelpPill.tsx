@@ -11,6 +11,11 @@ interface MascotHelpPillProps {
 }
 
 export default function MascotHelpPill({ role = "mahasiswa" }: MascotHelpPillProps) {
+  // Sembunyikan Tanya Merpi untuk admin dan wakil dekan (wd3)
+  if (role === "admin" || role === "wd3") {
+    return null;
+  }
+
   const [isOpen, setIsOpen] = useState(false);
   const [dismissedBubble, setDismissedBubble] = useState(false);
 
@@ -22,8 +27,6 @@ export default function MascotHelpPill({ role = "mahasiswa" }: MascotHelpPillPro
   const ruanganHref =
     role === "ketua_organisasi"
       ? "/dashboard/ketua-organisasi/ruangan"
-      : role === "admin"
-      ? "/dashboard/admin/ruangan"
       : "/dashboard/mahasiswa/ruangan";
 
   return (
