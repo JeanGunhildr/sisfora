@@ -87,13 +87,13 @@ export default function AIPencarian() {
 
   const STATUS_COLOR: Record<string, string> = {
     tersedia: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    ditahan: "bg-amber-50 text-amber-700 border-amber-200",
+    diproses: "bg-amber-50 text-amber-700 border-amber-200",
     digunakan: "bg-rose-50 text-rose-700 border-rose-200",
   };
 
   const STATUS_LABEL: Record<string, string> = {
     tersedia: "Tersedia",
-    ditahan: "Ditahan",
+    diproses: "Sedang Diproses",
     digunakan: "Digunakan",
   };
 

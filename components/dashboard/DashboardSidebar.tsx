@@ -52,6 +52,7 @@ const NAV_ITEMS: Record<RoleUser, NavItem[]> = {
   admin: [
     { label: "Dashboard", href: "/dashboard/admin", icon: LayoutDashboard },
     { label: "Verifikasi Akun", href: "/dashboard/admin/verifikasi", icon: Users },
+    { label: "Kelola Organisasi", href: "/dashboard/admin/organisasi", icon: Award },
     { label: "Kelola Gedung", href: "/dashboard/admin/gedung", icon: Building2 },
     { label: "Kelola Ruangan", href: "/dashboard/admin/ruangan", icon: Compass },
     { label: "Monitoring Peminjaman", href: "/dashboard/admin/peminjaman", icon: ClipboardList },
@@ -59,7 +60,7 @@ const NAV_ITEMS: Record<RoleUser, NavItem[]> = {
   ],
   wd3: [
     { label: "Dashboard", href: "/dashboard/wd3", icon: LayoutDashboard },
-    { label: "Persetujuan Surat", href: "/dashboard/wd3/tanda-tangan", icon: FileCheck2 },
+    { label: "Persetujuan Surat", href: "/dashboard/wd3/persetujuan", icon: FileCheck2 },
     { label: "Riwayat Persetujuan", href: "/dashboard/wd3/riwayat", icon: Eye },
   ],
 };

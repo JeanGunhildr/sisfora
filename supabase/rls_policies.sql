@@ -1,7 +1,8 @@
 -- ==============================================================================
--- SISFORA - KOMPREHENSIF ROW LEVEL SECURITY (RLS) POLICIES
+-- SISFORA - KOMPREHENSIF ROW LEVEL SECURITY (RLS) POLICIES & CONSTRAINTS
 -- Melindungi seluruh tabel: users, gedung, ruangan, fasilitas, pengajuan,
--- dokumen_pengajuan, tanda_tangan, riwayat_status, feedback, penahanan_jadwal
+-- dokumen_pengajuan, tanda_tangan, riwayat_status, feedback
+-- Dilengkapi mekanisme First Come, First Served (anti race condition di database)
 -- ==============================================================================
 
 -- ------------------------------------------------------------------------------
@@ -240,11 +241,56 @@ CREATE POLICY "Admin can manage ruangan_fasilitas"
 
 
 -- ==============================================================================
+-- 5B. TABEL: public.organisasi
+-- ==============================================================================
+ALTER TABLE public.organisasi ENABLE ROW LEVEL SECURITY;
+
+-- SELECT: Semua pengguna dapat melihat organisasi aktif; Admin & WD3 dapat melihat semua
+DROP POLICY IF EXISTS "Anyone can view active organisasi" ON public.organisasi;
+CREATE POLICY "Anyone can view active organisasi"
+  ON public.organisasi
+  FOR SELECT
+  TO authenticated, anon
+  USING (status_aktif = true OR public.is_admin() OR public.is_wd3() OR ketua_id = auth.uid());
+
+-- INSERT: Hanya Admin yang dapat menambah organisasi baru
+DROP POLICY IF EXISTS "Admin can insert organisasi" ON public.organisasi;
+CREATE POLICY "Admin can insert organisasi"
+  ON public.organisasi
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (public.is_admin());
+
+-- UPDATE: Hanya Admin yang dapat memperbarui organisasi (info, status, ketua_id)
+DROP POLICY IF EXISTS "Admin can update organisasi" ON public.organisasi;
+CREATE POLICY "Admin can update organisasi"
+  ON public.organisasi
+  FOR UPDATE
+  TO authenticated
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
+-- DELETE: Hanya Admin yang dapat menghapus organisasi
+DROP POLICY IF EXISTS "Admin can delete organisasi" ON public.organisasi;
+CREATE POLICY "Admin can delete organisasi"
+  ON public.organisasi
+  FOR DELETE
+  TO authenticated
+  USING (public.is_admin());
+
+-- Constraint: 1 Mahasiswa maksimal menjadi ketua di 1 organisasi
+CREATE UNIQUE INDEX IF NOT EXISTS idx_organisasi_ketua_unique 
+  ON public.organisasi (ketua_id) 
+  WHERE ketua_id IS NOT NULL;
+
+
+-- ==============================================================================
 -- 6. TABEL: public.pengajuan
 -- ==============================================================================
 ALTER TABLE public.pengajuan ENABLE ROW LEVEL SECURITY;
 
--- SELECT: Admin dan WD3 dapat melihat semua; Mahasiswa melihat pengajuannya sendiri; Ketua Organisasi melihat pengajuan organisasinya
+-- SELECT: Admin dan WD3 melihat semua; Pemohon melihat miliknya; Ketua melihat organisasinya;
+-- Mahasiswa terautentikasi dapat melihat jadwal pengajuan aktif untuk transparansi ketersediaan ruangan
 DROP POLICY IF EXISTS "View pengajuan policy" ON public.pengajuan;
 CREATE POLICY "View pengajuan policy"
   ON public.pengajuan
@@ -258,6 +304,7 @@ CREATE POLICY "View pengajuan policy"
       public.is_ketua_organisasi() 
       AND jenis_peminjaman = 'organisasi'
     )
+    OR status NOT IN ('ditolak_ketua', 'ditolak_wd3', 'ditolak', 'dibatalkan', 'kedaluwarsa')
   );
 
 -- INSERT: Mahasiswa yang sudah diverifikasi/disetujui dapat membuat pengajuan baru
@@ -300,6 +347,105 @@ CREATE POLICY "Delete pengajuan policy"
     public.is_admin()
     OR (pemohon_id = auth.uid() AND status = 'menunggu_upload')
   );
+
+-- ------------------------------------------------------------------------------
+-- 6B. MEKANISME FIRST COME, FIRST SERVED (ANTI-RACE CONDITION & EXCLUSION)
+-- ------------------------------------------------------------------------------
+
+-- Fungsi Trigger: Validasi bentrok jadwal dengan Advisory Lock per ruangan
+CREATE OR REPLACE FUNCTION public.check_jadwal_ruangan_bentrok()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  -- 1. Validasi hanya berjalan jika status pengajuan aktif
+  -- Jika ditolak (ditolak_ketua, ditolak_wd3), dibatalkan, atau kedaluwarsa, slot otomatis dibebaskan
+  IF NEW.status NOT IN ('ditolak_ketua', 'ditolak_wd3', 'ditolak', 'dibatalkan', 'kedaluwarsa') THEN
+    
+    -- 2. Kunci transaksi advisory per ruangan_id untuk mencegah race condition (siapa cepat dia dapat)
+    PERFORM pg_advisory_xact_lock(hashtext('ruangan_lock_' || NEW.ruangan_id::text));
+
+    -- 3. Cek apakah ada jadwal ruangan yang bertabrakan dengan pengajuan aktif lain
+    IF EXISTS (
+      SELECT 1
+      FROM public.pengajuan
+      WHERE ruangan_id = NEW.ruangan_id
+        AND id != COALESCE(NEW.id, '00000000-0000-0000-0000-000000000000'::uuid)
+        AND status NOT IN ('ditolak_ketua', 'ditolak_wd3', 'ditolak', 'dibatalkan', 'kedaluwarsa')
+        AND (tanggal_mulai, tanggal_selesai) OVERLAPS (NEW.tanggal_mulai, NEW.tanggal_selesai)
+    ) THEN
+      RAISE EXCEPTION 'Jadwal ruangan yang dipilih telah diamankan oleh pemohon lain terlebih dahulu (First Come, First Served).'
+        USING ERRCODE = '23P01',
+              HINT = 'Silakan pilih ruangan lain atau tentukan waktu yang tidak bertabrakan.';
+    END IF;
+
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+-- Pasang trigger pada tabel pengajuan
+DROP TRIGGER IF EXISTS trg_check_jadwal_ruangan_bentrok ON public.pengajuan;
+CREATE TRIGGER trg_check_jadwal_ruangan_bentrok
+  BEFORE INSERT OR UPDATE OF ruangan_id, tanggal_mulai, tanggal_selesai, status
+  ON public.pengajuan
+  FOR EACH ROW
+  EXECUTE FUNCTION public.check_jadwal_ruangan_bentrok();
+
+-- Exclusion Constraint dengan partial condition (membutuhkan extension btree_gist)
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+
+ALTER TABLE public.pengajuan DROP CONSTRAINT IF EXISTS no_overlapping_ruangan_schedule;
+ALTER TABLE public.pengajuan
+  ADD CONSTRAINT no_overlapping_ruangan_schedule
+  EXCLUDE USING gist (
+    ruangan_id WITH =,
+    tstzrange(tanggal_mulai, tanggal_selesai) WITH &&
+  )
+  WHERE (status NOT IN ('ditolak_ketua', 'ditolak_wd3', 'ditolak', 'dibatalkan', 'kedaluwarsa'));
+
+-- Fungsi Helper RPC: Pengecekan ketersediaan jadwal ruangan
+CREATE OR REPLACE FUNCTION public.cek_ketersediaan_ruangan(
+  p_ruangan_id uuid,
+  p_tanggal_mulai timestamptz,
+  p_tanggal_selesai timestamptz,
+  p_pengajuan_id uuid DEFAULT NULL
+)
+RETURNS TABLE (
+  tersedia boolean,
+  konflik_nomor character varying,
+  konflik_mulai timestamptz,
+  konflik_selesai timestamptz
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+STABLE
+AS $$
+DECLARE
+  v_konflik RECORD;
+BEGIN
+  SELECT nomor_pengajuan, tanggal_mulai, tanggal_selesai
+  INTO v_konflik
+  FROM public.pengajuan
+  WHERE ruangan_id = p_ruangan_id
+    AND (p_pengajuan_id IS NULL OR id != p_pengajuan_id)
+    AND status NOT IN ('ditolak_ketua', 'ditolak_wd3', 'ditolak', 'dibatalkan', 'kedaluwarsa')
+    AND (tanggal_mulai, tanggal_selesai) OVERLAPS (p_tanggal_mulai, p_tanggal_selesai)
+  LIMIT 1;
+
+  IF FOUND THEN
+    RETURN QUERY SELECT false, v_konflik.nomor_pengajuan, v_konflik.tanggal_mulai, v_konflik.tanggal_selesai;
+  ELSE
+    RETURN QUERY SELECT true, NULL::character varying, NULL::timestamptz, NULL::timestamptz;
+  END IF;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.cek_ketersediaan_ruangan TO authenticated, anon;
 
 
 -- ==============================================================================
@@ -409,27 +555,10 @@ CREATE POLICY "Delete feedback policy"
 
 
 -- ==============================================================================
--- 9. TABEL: public.penahanan_jadwal, tanda_tangan & riwayat_status
+-- 9. TABEL: public.tanda_tangan & public.riwayat_status
 -- ==============================================================================
-ALTER TABLE public.penahanan_jadwal ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tanda_tangan ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.riwayat_status ENABLE ROW LEVEL SECURITY;
-
--- Penahanan Jadwal
-DROP POLICY IF EXISTS "View penahanan jadwal" ON public.penahanan_jadwal;
-CREATE POLICY "View penahanan jadwal"
-  ON public.penahanan_jadwal
-  FOR SELECT
-  TO authenticated, anon
-  USING (true);
-
-DROP POLICY IF EXISTS "Manage penahanan jadwal" ON public.penahanan_jadwal;
-CREATE POLICY "Manage penahanan jadwal"
-  ON public.penahanan_jadwal
-  FOR ALL
-  TO authenticated
-  USING (true)
-  WITH CHECK (true);
 
 -- Tanda Tangan
 DROP POLICY IF EXISTS "View tanda tangan" ON public.tanda_tangan;
@@ -478,7 +607,7 @@ CREATE POLICY "Insert riwayat status"
 -- ==============================================================================
 GRANT USAGE ON SCHEMA public TO authenticated, anon, service_role;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated, service_role;
-GRANT SELECT ON public.gedung, public.ruangan, public.fasilitas, public.ruangan_fasilitas, public.penahanan_jadwal TO anon;
+GRANT SELECT ON public.gedung, public.ruangan, public.organisasi, public.fasilitas, public.ruangan_fasilitas TO anon;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO authenticated, service_role;
 
 -- ==============================================================================

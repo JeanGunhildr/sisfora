@@ -16,6 +16,10 @@ import {
   Compass,
   CheckCheck,
   ArrowRight,
+  Award,
+  FileCheck2,
+  History,
+  FileSignature,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -50,6 +54,13 @@ const ADMIN_FEATURES = [
     keywords: ["gedung", "kelola gedung", "tambah gedung", "lokasi", "bangunan"],
   },
   {
+    title: "Kelola Organisasi",
+    desc: "Master lembaga kemahasiswaan (BEM, DPM, HIMA, UKM) & atur ketua",
+    href: "/dashboard/admin/organisasi",
+    icon: Award,
+    keywords: ["organisasi", "ketua organisasi", "bem", "hima", "ukm", "dpm", "lembaga"],
+  },
+  {
     title: "Kelola Ruangan",
     desc: "Tambah ruangan, kapasitas, luas, lantai, upload foto, dan fasilitas",
     href: "/dashboard/admin/ruangan",
@@ -72,6 +83,30 @@ const ADMIN_FEATURES = [
   },
 ];
 
+const WD3_FEATURES = [
+  {
+    title: "Dashboard WD3",
+    desc: "Statistik permohonan peminjaman sarana dan metrik persetujuan",
+    href: "/dashboard/wd3",
+    icon: LayoutDashboard,
+    keywords: ["dashboard", "home", "beranda", "statistik", "wd3", "overview", "ringkasan"],
+  },
+  {
+    title: "Persetujuan Surat & TTD Digital",
+    desc: "Tinjau surat umum & organisasi, bubuhkan tanda tangan digital",
+    href: "/dashboard/wd3/persetujuan",
+    icon: FileCheck2,
+    keywords: ["persetujuan", "surat", "tanda tangan", "ttd", "digital", "approve", "acc", "validasi"],
+  },
+  {
+    title: "Riwayat Persetujuan",
+    desc: "Arsip seluruh permohonan yang telah disetujui atau ditolak",
+    href: "/dashboard/wd3/riwayat",
+    icon: History,
+    keywords: ["riwayat", "history", "arsip", "disetujui", "ditolak", "dokumen"],
+  },
+];
+
 export default function DashboardHeader({ nama, roleTitle, role }: DashboardHeaderProps) {
   const router = useRouter();
   const supabase = createClient();
@@ -85,21 +120,24 @@ export default function DashboardHeader({ nama, roleTitle, role }: DashboardHead
   const searchRef = useRef<HTMLDivElement>(null);
 
   // Admin Notification Counts
-  const [notifCounts, setNotifCounts] = useState({
+  const [adminNotifs, setAdminNotifs] = useState({
     pendingUsers: 0,
     newLoans: 0,
     newFeedback: 0,
   });
 
+  // WD3 Notification Count
+  const [wd3PendingCount, setWd3PendingCount] = useState(0);
+
   useEffect(() => {
-    // Check if notification was cleared in local session
-    const cleared = sessionStorage.getItem("sisfora_admin_notifs_cleared");
+    const storageKey = role === "wd3" ? "sisfora_wd3_notifs_cleared" : "sisfora_admin_notifs_cleared";
+    const cleared = sessionStorage.getItem(storageKey);
     if (cleared === "true") {
       setIsNotifCleared(true);
     }
 
     if (role === "admin") {
-      const fetchCounts = async () => {
+      const fetchAdminCounts = async () => {
         try {
           const { count: userCount } = await supabase
             .from("users")
@@ -114,21 +152,69 @@ export default function DashboardHeader({ nama, roleTitle, role }: DashboardHead
             .from("feedback")
             .select("*", { count: "exact", head: true });
 
-          setNotifCounts({
+          setAdminNotifs({
             pendingUsers: userCount || 0,
             newLoans: loanCount || 0,
             newFeedback: feedbackCount || 0,
           });
         } catch (e) {
-          console.error("Error fetching notifications:", e);
+          console.error("Error fetching admin notifications:", e);
         }
       };
 
-      fetchCounts();
+      fetchAdminCounts();
+    } else if (role === "wd3") {
+      const fetchWd3Counts = async () => {
+        try {
+          const { data: pengajuanList, error: wd3Err } = await supabase
+            .from("pengajuan")
+            .select(`
+              id,
+              status,
+              jenis_peminjaman,
+              organisasi_id,
+              dokumen_pengajuan:dokumen_pengajuan!dokumen_pengajuan_pengajuan_id_fkey (
+                id,
+                status_dokumen
+              )
+            `)
+            .not("status", "in", '("disetujui","ditolak_wd3","ditolak_ketua","dibatalkan","kedaluwarsa")');
+
+          if (wd3Err) {
+            console.error("Gagal mengambil notifikasi WD3:", wd3Err);
+            return;
+          }
+
+          const list = pengajuanList || [];
+          const count = list.filter((item: any) => {
+            const docs = item.dokumen_pengajuan || [];
+            if (docs.length === 0 || item.status === "menunggu_upload") return false;
+
+            const isOrganisasi =
+              item.jenis_peminjaman === "organisasi" || Boolean(item.organisasi_id);
+
+            if (isOrganisasi) {
+              const isSignedByKetua = docs.some(
+                (d: any) => d.status_dokumen === "ditandatangani_ketua"
+              );
+              return isSignedByKetua && item.status === "menunggu_wd3";
+            }
+
+            // Kategori Umum
+            return item.status === "menunggu_wd3" || docs.some((d: any) => d.status_dokumen === "diunggah");
+          }).length;
+
+          setWd3PendingCount(count);
+        } catch (e) {
+          console.error("Error fetching WD3 notifications:", e);
+        }
+      };
+
+      fetchWd3Counts();
     }
   }, [role]);
 
-  // Click outside listener for notification popup and search dropdown
+  // Click outside listener
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -142,17 +228,21 @@ export default function DashboardHeader({ nama, roleTitle, role }: DashboardHead
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const rawTotalNotifs = notifCounts.pendingUsers + notifCounts.newLoans + notifCounts.newFeedback;
-  const displayNotifCount = isNotifCleared ? 0 : rawTotalNotifs;
+  const rawAdminNotifs = adminNotifs.pendingUsers + adminNotifs.newLoans + adminNotifs.newFeedback;
+  const displayAdminNotifs = isNotifCleared ? 0 : rawAdminNotifs;
+  const displayWd3Notifs = isNotifCleared ? 0 : wd3PendingCount;
 
   // Clear notification numbers handler
   const handleClearNotifications = () => {
     setIsNotifCleared(true);
-    sessionStorage.setItem("sisfora_admin_notifs_cleared", "true");
+    const storageKey = role === "wd3" ? "sisfora_wd3_notifs_cleared" : "sisfora_admin_notifs_cleared";
+    sessionStorage.setItem(storageKey, "true");
   };
 
-  // Filter features for Admin Quick Search
-  const matchingFeatures = ADMIN_FEATURES.filter((f) => {
+  // Features list based on active role
+  const activeFeatures = role === "admin" ? ADMIN_FEATURES : role === "wd3" ? WD3_FEATURES : [];
+
+  const matchingFeatures = activeFeatures.filter((f) => {
     const q = searchTerm.toLowerCase().trim();
     if (!q) return true;
     return (
@@ -164,7 +254,7 @@ export default function DashboardHeader({ nama, roleTitle, role }: DashboardHead
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (role === "admin") {
+    if (activeFeatures.length > 0) {
       if (matchingFeatures.length > 0) {
         router.push(matchingFeatures[0].href);
         setShowSearchDropdown(false);
@@ -174,6 +264,8 @@ export default function DashboardHeader({ nama, roleTitle, role }: DashboardHead
       router.push(`/dashboard/mahasiswa/ruangan?q=${encodeURIComponent(searchTerm.trim())}`);
     }
   };
+
+  const isFeatureSearchable = role === "admin" || role === "wd3";
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 relative">
@@ -185,26 +277,28 @@ export default function DashboardHeader({ nama, roleTitle, role }: DashboardHead
             type="text"
             value={searchTerm}
             onFocus={() => {
-              if (role === "admin") setShowSearchDropdown(true);
+              if (isFeatureSearchable) setShowSearchDropdown(true);
             }}
             onChange={(e) => {
               setSearchTerm(e.target.value);
-              if (role === "admin") setShowSearchDropdown(true);
+              if (isFeatureSearchable) setShowSearchDropdown(true);
             }}
             placeholder={
               role === "admin"
                 ? "Cari fitur, menu, atau navigasi admin..."
+                : role === "wd3"
+                ? "Cari fitur, persetujuan surat, riwayat WD3..."
                 : "Cari ruangan, gedung, kapasitas, atau fasilitas..."
             }
             className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200/90 rounded-2xl text-xs md:text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 shadow-2xs transition-all text-slate-800"
           />
         </form>
 
-        {/* Feature Search Dropdown for Admin */}
-        {role === "admin" && showSearchDropdown && (
+        {/* Feature Search Dropdown for Admin & WD3 */}
+        {isFeatureSearchable && showSearchDropdown && (
           <div className="absolute left-0 top-12 w-full bg-white rounded-3xl border border-slate-100 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150 max-h-80 overflow-y-auto">
             <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-50 flex items-center justify-between">
-              <span>Navigasi Fitur Admin</span>
+              <span>Navigasi Fitur {role === "admin" ? "Admin" : "Wakil Dekan 3"}</span>
               <span className="text-[10px] font-normal lowercase text-slate-400">
                 Tekan enter untuk buka
               </span>
@@ -271,9 +365,15 @@ export default function DashboardHeader({ nama, roleTitle, role }: DashboardHead
         >
           <Bell className="w-4 h-4" />
           {role === "admin" ? (
-            displayNotifCount > 0 && (
+            displayAdminNotifs > 0 && (
               <span className="min-w-4 h-4 px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center absolute -top-1 -right-1 ring-2 ring-white">
-                {displayNotifCount}
+                {displayAdminNotifs}
+              </span>
+            )
+          ) : role === "wd3" ? (
+            displayWd3Notifs > 0 && (
+              <span className="min-w-4 h-4 px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center absolute -top-1 -right-1 ring-2 ring-white">
+                {displayWd3Notifs}
               </span>
             )
           ) : (
@@ -281,19 +381,20 @@ export default function DashboardHeader({ nama, roleTitle, role }: DashboardHead
           )}
         </button>
 
-        {/* Notification Dropdown for Admin */}
+        {/* Notification Dropdown */}
         {showNotifications && (
           <div className="absolute right-0 top-12 w-80 sm:w-96 bg-white rounded-3xl border border-slate-100 shadow-2xl p-4 z-50 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <Bell className="w-4 h-4 text-indigo-600" />
                 <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                  Notifikasi Sistem
+                  Notifikasi {role === "wd3" ? "WD3" : "Sistem"}
                 </h4>
               </div>
 
               <div className="flex items-center gap-2">
-                {role === "admin" && displayNotifCount > 0 && (
+                {((role === "admin" && displayAdminNotifs > 0) ||
+                  (role === "wd3" && displayWd3Notifs > 0)) && (
                   <button
                     type="button"
                     onClick={handleClearNotifications}
@@ -333,15 +434,15 @@ export default function DashboardHeader({ nama, roleTitle, role }: DashboardHead
                           Pendaftar Baru
                         </div>
                         <div className="text-[11px] text-slate-500">
-                          {notifCounts.pendingUsers > 0
-                            ? `${notifCounts.pendingUsers} mahasiswa menunggu verifikasi KTM`
+                          {adminNotifs.pendingUsers > 0
+                            ? `${adminNotifs.pendingUsers} mahasiswa menunggu verifikasi KTM`
                             : "Tidak ada pendaftar menunggu"}
                         </div>
                       </div>
                     </div>
-                    {notifCounts.pendingUsers > 0 && !isNotifCleared && (
+                    {adminNotifs.pendingUsers > 0 && !isNotifCleared && (
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-white">
-                        {notifCounts.pendingUsers}
+                        {adminNotifs.pendingUsers}
                       </span>
                     )}
                   </div>
@@ -363,15 +464,15 @@ export default function DashboardHeader({ nama, roleTitle, role }: DashboardHead
                           Pengajuan Peminjaman
                         </div>
                         <div className="text-[11px] text-slate-500">
-                          {notifCounts.newLoans > 0
-                            ? `${notifCounts.newLoans} data pengajuan peminjaman tercatat`
+                          {adminNotifs.newLoans > 0
+                            ? `${adminNotifs.newLoans} data pengajuan peminjaman tercatat`
                             : "Belum ada pengajuan"}
                         </div>
                       </div>
                     </div>
-                    {notifCounts.newLoans > 0 && !isNotifCleared && (
+                    {adminNotifs.newLoans > 0 && !isNotifCleared && (
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-600 text-white">
-                        {notifCounts.newLoans}
+                        {adminNotifs.newLoans}
                       </span>
                     )}
                   </div>
@@ -393,17 +494,72 @@ export default function DashboardHeader({ nama, roleTitle, role }: DashboardHead
                           Feedback Pengguna
                         </div>
                         <div className="text-[11px] text-slate-500">
-                          {notifCounts.newFeedback > 0
-                            ? `${notifCounts.newFeedback} ulasan & feedback masuk`
+                          {adminNotifs.newFeedback > 0
+                            ? `${adminNotifs.newFeedback} ulasan & feedback masuk`
                             : "Belum ada feedback"}
                         </div>
                       </div>
                     </div>
-                    {notifCounts.newFeedback > 0 && !isNotifCleared && (
+                    {adminNotifs.newFeedback > 0 && !isNotifCleared && (
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-600 text-white">
-                        {notifCounts.newFeedback}
+                        {adminNotifs.newFeedback}
                       </span>
                     )}
+                  </div>
+                </>
+              ) : role === "wd3" ? (
+                <>
+                  {/* WD3 Notification: Surat Menunggu Persetujuan */}
+                  <div
+                    onClick={() => {
+                      setShowNotifications(false);
+                      router.push("/dashboard/wd3/persetujuan");
+                    }}
+                    className="p-3.5 rounded-2xl bg-slate-50/70 hover:bg-amber-50/80 border border-slate-100/80 hover:border-amber-200 transition-all cursor-pointer flex items-center justify-between group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold shrink-0">
+                        <FileCheck2 className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-slate-800 group-hover:text-amber-800">
+                          Permohonan Siap Tanda Tangan
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          {wd3PendingCount > 0
+                            ? `${wd3PendingCount} permohonan menunggu persetujuan Anda`
+                            : "Tidak ada permohonan tertunda"}
+                        </div>
+                      </div>
+                    </div>
+                    {wd3PendingCount > 0 && !isNotifCleared && (
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-white">
+                        {wd3PendingCount}
+                      </span>
+                    )}
+                  </div>
+
+                  <div
+                    onClick={() => {
+                      setShowNotifications(false);
+                      router.push("/dashboard/wd3/riwayat");
+                    }}
+                    className="p-3.5 rounded-2xl bg-slate-50/70 hover:bg-indigo-50/80 border border-slate-100/80 hover:border-indigo-200 transition-all cursor-pointer flex items-center justify-between group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold shrink-0">
+                        <History className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-slate-800 group-hover:text-indigo-800">
+                          Arsip Surat
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          Lihat riwayat surat yang telah disahkan atau ditolak
+                        </div>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-indigo-600 transition-colors" />
                   </div>
                 </>
               ) : (

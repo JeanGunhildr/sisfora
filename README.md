@@ -24,9 +24,8 @@ SISFORA memiliki empat role utama, yaitu Mahasiswa, Ketua Organisasi, Admin, dan
 
 Fitur utama:
 
-- **Pencarian ruangan berbasis AI** berdasarkan kebutuhan, fasilitas, kapasitas, serta jadwal.
-- **Visualisasi denah ruangan** dengan kode warna: hijau untuk tersedia, kuning untuk penahanan sementara, oranye untuk pengajuan yang menunggu keputusan, dan merah untuk peminjaman yang disetujui.
-- **Penjadwalan interaktif** melalui pencarian tanggal, grafik pemakaian, dan fitur drag and drop.
+- **Visualisasi denah ruangan** dengan indikator status: hijau untuk tersedia, kuning/oranye untuk pengajuan yang sedang diproses, dan merah untuk peminjaman yang disetujui.
+- **Mekanisme First Come, First Served (siapa cepat dia dapat)**: Pengguna yang submit terlebih dahulu langsung mengamankan jadwal ruangan di database. Jika pengajuan ditolak atau dibatalkan, slot waktu otomatis terbuka kembali.
 - **Pengajuan peminjaman** untuk kepentingan umum maupun organisasi.
 - **Persetujuan dan tanda tangan dokumen digital** oleh Ketua Organisasi dan WD III sesuai alur pengajuan.
 - **Pemantauan status dan riwayat aktivitas** agar mahasiswa dapat mengetahui perkembangan pengajuan.

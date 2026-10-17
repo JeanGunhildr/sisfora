@@ -141,14 +141,14 @@ export default function AlurPeminjamanView({ role }: AlurPeminjamanViewProps) {
                   1
                 </div>
                 <h4 className="text-sm font-bold text-slate-800">
-                  Cari Ruangan & Tahan Jadwal
+                  Cari Ruangan & Tentukan Jadwal
                 </h4>
                 <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                  Mahasiswa mencari ruangan yang berstatus <strong className="text-emerald-600">Tersedia</strong>. Saat membuka formulir pengajuan, sistem secara otomatis menahan jadwal ruangan (<span className="text-amber-600 font-semibold">Kuning / Ditahan</span>) selama 15 menit agar tidak saling berebut dengan mahasiswa lain.
+                  Mahasiswa mencari ruangan dan menentukan waktu peminjaman. Sistem menerapkan prinsip <strong className="text-indigo-600">First Come, First Served (siapa cepat dia dapat)</strong>. Pengguna yang berhasil mengajukan permohonan terlebih dahulu akan langsung mengamankan jadwal ruangan tersebut.
                 </p>
               </div>
-              <div className="mt-4 pt-3 border-t border-slate-200/60 text-[11px] text-slate-400 font-medium">
-                ⏱️ Penahanan jadwal otomatis
+              <div className="mt-4 pt-3 border-t border-slate-200/60 text-[11px] text-indigo-600 font-medium">
+                ⚡ Siapa cepat dia dapat (FCFS)
               </div>
             </div>
 
@@ -162,11 +162,11 @@ export default function AlurPeminjamanView({ role }: AlurPeminjamanViewProps) {
                   Unggah Berkas Proposal / Surat
                 </h4>
                 <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                  Pilih kategori <strong>Organisasi</strong>, lalu unggah berkas surat permohonan dalam format PDF. Sistem akan langsung mencatat pengajuan dan meneruskan dokumen ke dashboard <strong>Ketua Organisasi</strong>.
+                  Pilih kategori <strong>Organisasi</strong>, lalu unggah berkas surat permohonan resmi dalam format PDF. Jadwal ruangan otomatis terkunci dari bentrok pemohon lain dan diteruskan ke antrean verifikasi <strong>Ketua Organisasi</strong>.
                 </p>
               </div>
               <div className="mt-4 pt-3 border-t border-slate-200/60 text-[11px] text-indigo-600 font-medium">
-                📄 Status: Menunggu Ketua Org
+                📄 Status: Menunggu TTD Ketua
               </div>
             </div>
 
@@ -180,7 +180,7 @@ export default function AlurPeminjamanView({ role }: AlurPeminjamanViewProps) {
                   Verifikasi & TTD Ketua Organisasi
                 </h4>
                 <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                  Ketua Organisasi memeriksa kesesuaian anggota dan kepentingannya. Jika sesuai, Ketua Organisasi menandatangani surat secara digital di aplikasi. Dokumen awal <strong>langsung ditimpa</strong> dengan file bertanda tangan, kemudian diteruskan ke <strong>Wakil Dekan 3</strong>.
+                  Ketua Organisasi memeriksa kelayakan kegiatan. Jika disetujui, Ketua menandatangani dokumen secara digital. Dokumen lama <strong>ditimpa otomatis</strong> dengan versi bertanda tangan lalu diteruskan ke <strong>Wakil Dekan 3</strong>.
                 </p>
               </div>
               <div className="mt-4 pt-3 border-t border-slate-200/60 text-[11px] text-violet-600 font-medium">
@@ -198,7 +198,7 @@ export default function AlurPeminjamanView({ role }: AlurPeminjamanViewProps) {
                   Persetujuan Akhir Wakil Dekan 3
                 </h4>
                 <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                  Wakil Dekan 3 melakukan peninjauan akhir dan membubuhkan tanda tangan digital dekanat. Dokumen kembali ditimpa dengan versi final yang sah. Status ruangan berubah menjadi <strong>Disetujui</strong> dan mahasiswa dapat mengunduh surat izin resmi.
+                  Wakil Dekan 3 memberikan pengesahan akhir digital. Berkas ditimpa dengan versi berkekuatan hukum penuh dan status menjadi <strong>Disetujui</strong>. Jika pengajuan ditolak atau dibatalkan, slot jadwal ruangan <strong>seketika terbuka kembali</strong> untuk pemohon lain.
                 </p>
               </div>
               <div className="mt-4 pt-3 border-t border-slate-200/60 text-[11px] text-emerald-600 font-medium">
@@ -232,14 +232,14 @@ export default function AlurPeminjamanView({ role }: AlurPeminjamanViewProps) {
                   1
                 </div>
                 <h4 className="text-sm font-bold text-slate-800">
-                  Cari Ruangan & Tahan Jadwal
+                  Cari Ruangan & Tentukan Jadwal
                 </h4>
                 <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                  Mahasiswa mencari ruangan yang tersedia berdasarkan kapasitas, fasilitas, atau denah. Jadwal ruangan otomatis ditahan sementara (status: <span className="text-amber-600 font-semibold">Ditahan</span>) agar tidak bentrok dengan mahasiswa lain saat pengisian form.
+                  Mahasiswa mencari ruangan yang tersedia berdasarkan kapasitas, fasilitas, atau denah. Menggunakan sistem <strong className="text-indigo-600">First Come, First Served</strong>, pemohon yang pertama mengirimkan formulir akan mengamankan jadwal ruangan dari pemohon lain.
                 </p>
               </div>
-              <div className="mt-4 pt-3 border-t border-slate-200/60 text-[11px] text-slate-400 font-medium">
-                ⏱️ Penahanan jadwal 15 menit
+              <div className="mt-4 pt-3 border-t border-slate-200/60 text-[11px] text-indigo-600 font-medium">
+                ⚡ Siapa cepat dia dapat (FCFS)
               </div>
             </div>
 
@@ -253,7 +253,7 @@ export default function AlurPeminjamanView({ role }: AlurPeminjamanViewProps) {
                   Unggah Surat Permohonan Umum
                 </h4>
                 <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                  Pilih kategori <strong>Umum</strong> pada form peminjaman dan unggah surat permohonan. Sistem secara otomatis meneruskan berkas langsung ke antrean verifikasi <strong>Wakil Dekan 3</strong>.
+                  Pilih kategori <strong>Umum</strong> pada formulir peminjaman dan unggah surat permohonan. Jadwal ruangan terlindungi di database dan berkas langsung masuk ke antrean verifikasi <strong>Wakil Dekan 3</strong>.
                 </p>
               </div>
               <div className="mt-4 pt-3 border-t border-slate-200/60 text-[11px] text-blue-600 font-medium">
@@ -271,7 +271,7 @@ export default function AlurPeminjamanView({ role }: AlurPeminjamanViewProps) {
                   Tanda Tangan & Persetujuan WD3
                 </h4>
                 <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                  Wakil Dekan 3 memeriksa urgensi peminjaman dan membubuhkan tanda tangan digital di aplikasi. Dokumen ditimpa dengan versi bertanda tangan resmi, dan ruangan siap digunakan sesuai jadwal yang disetujui.
+                  Wakil Dekan 3 memeriksa urgensi peminjaman dan membubuhkan tanda tangan digital. Dokumen ditimpa dengan versi sah dan status menjadi <strong>Disetujui</strong>. Jika ditolak atau dibatalkan, jadwal ruangan otomatis dapat dipinjam kembali oleh mahasiswa lain.
                 </p>
               </div>
               <div className="mt-4 pt-3 border-t border-slate-200/60 text-[11px] text-emerald-600 font-medium">
