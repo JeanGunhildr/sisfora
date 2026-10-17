@@ -10,13 +10,13 @@
 body {
   margin: 0;
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background-color: #F7F9FD;
+  background-color: #FAF9F5;
   color: #1E293B;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom scrollbar for clean dashboard feel */
+/* Custom scrollbar with warm soft feel */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -25,9 +25,9 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
+  background: #E2D9CC;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
+  background: #CBD5E1;
 }

@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
@@ -170,19 +171,26 @@ export default async function StatusPeminjamanPage() {
       </div>
 
       {!pengajuanList || pengajuanList.length === 0 ? (
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-xs p-16 text-center">
-          <div className="w-16 h-16 rounded-3xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-4">
-            <ClipboardList className="w-8 h-8" />
+        <div className="bg-white rounded-3xl border border-amber-100/80 shadow-xs p-12 text-center">
+          <div className="relative w-24 h-24 mx-auto mb-3 drop-shadow-md">
+            <Image
+              src="/maskot1.png"
+              alt="Merpi"
+              width={96}
+              height={96}
+              className="object-contain"
+            />
           </div>
-          <p className="font-bold text-slate-700 text-lg">Belum Ada Pengajuan Peminjaman</p>
-          <p className="text-sm text-slate-400 mt-2 max-w-sm mx-auto leading-relaxed">
-            Anda belum memiliki riwayat pengajuan peminjaman ruangan. Pilih ruangan yang tersedia dan ajukan jadwal kegiatan Anda.
+          <p className="font-bold text-slate-800 text-lg">Belum Ada Pengajuan Peminjaman</p>
+          <p className="text-xs text-amber-800/80 mt-1 max-w-sm mx-auto leading-relaxed">
+            Anda belum memiliki riwayat pengajuan peminjaman ruangan. Si Merpi siap antar berkas permohonanmu kalau kamu mau pinjam ruangan!
           </p>
           <Link
             href="/dashboard/mahasiswa/ruangan"
-            className="inline-block mt-6 px-6 py-2.5 rounded-full text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-sm"
+            className="inline-flex items-center gap-2 mt-5 px-6 py-2.5 rounded-full text-xs font-bold bg-gradient-to-r from-blue-700 via-sky-600 to-amber-500 hover:from-blue-800 hover:to-amber-600 text-white transition-all shadow-md shadow-sky-500/20 active:scale-95"
           >
-            Cari Ruangan Tersedia
+            <span>Cari Ruangan Tersedia</span>
+            <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
       ) : (

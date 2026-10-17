@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
@@ -39,19 +40,40 @@ export default async function KetuaOrganisasiDashboard() {
         roleTitle={`Ketua Organisasi ${org?.singkatan ? `(${org.singkatan})` : ""}`}
       />
 
-      {/* Hero Banner */}
-      <div className="relative overflow-hidden rounded-[2.25rem] bg-gradient-to-r from-violet-700 via-indigo-600 to-sky-600 p-8 sm:p-10 text-white shadow-xl shadow-indigo-500/15">
-        <div className="relative z-10 max-w-xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-xs font-semibold mb-3">
-            <Building2 className="w-3.5 h-3.5" />
-            <span>{org?.nama || "Organisasi Kemahasiswaan"}</span>
+      {/* Hero Banner with Mascot */}
+      <div className="relative overflow-hidden rounded-[2.25rem] bg-gradient-to-r from-blue-700 via-sky-600 to-indigo-700 p-8 sm:p-10 text-white shadow-xl shadow-sky-500/20 border border-sky-400/20">
+        <div className="absolute -top-16 -right-16 w-80 h-80 bg-amber-400/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-16 -left-16 w-80 h-80 bg-blue-300/20 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="max-w-xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-xs font-semibold mb-3 border border-white/25">
+              <Building2 className="w-3.5 h-3.5 text-amber-300" />
+              <span>{org?.nama || "Organisasi Kemahasiswaan"}</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-tight">
+              Persetujuan Proposal Acara Organisasi
+            </h1>
+            <p className="mt-2 text-xs sm:text-sm text-sky-100 font-normal leading-relaxed">
+              Periksa kesesuaian anggota dan keperluan acara sebelum menandatangani surat permohonan untuk diteruskan ke Wakil Dekan 3.
+            </p>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-            Persetujuan Proposal Acara Organisasi
-          </h1>
-          <p className="mt-2 text-xs sm:text-sm text-indigo-100 font-normal leading-relaxed">
-            Periksa kesesuaian anggota dan keperluan acara sebelum menandatangani surat permohonan untuk diteruskan ke Wakil Dekan 3.
-          </p>
+
+          {/* Right Mascot Illustration & Warm Speech Bubble */}
+          <div className="relative flex items-center justify-center lg:justify-end shrink-0 pt-2 lg:pt-0">
+            <div className="hidden xl:block absolute -top-4 -left-16 bg-white/95 text-slate-800 px-3.5 py-1.5 rounded-2xl rounded-br-xs shadow-lg border border-amber-200 text-xs font-bold z-20 animate-pulse">
+              Ada surat menunggu tanda tanganmu! 🕊️✉️
+            </div>
+            <div className="relative w-40 h-40 sm:w-48 sm:h-48 drop-shadow-2xl hover:scale-105 transition-transform duration-300">
+              <Image
+                src="/maskot1.png"
+                alt="Merpi Maskot SISFORA"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
+          </div>
         </div>
       </div>
 

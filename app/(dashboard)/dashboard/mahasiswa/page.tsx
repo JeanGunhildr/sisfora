@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
@@ -226,21 +227,21 @@ export default async function MahasiswaDashboard() {
         </div>
       )}
 
-      {/* Hero Banner SISFORA */}
-      <div className="relative overflow-hidden rounded-[2.25rem] bg-gradient-to-r from-[#4F46E5] via-[#5A4EF8] to-[#3B82F6] p-8 sm:p-10 text-white shadow-xl shadow-indigo-500/15">
-        <div className="absolute -top-16 -right-16 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+      {/* Hero Banner SISFORA with Mascot Merpi */}
+      <div className="relative overflow-hidden rounded-[2.25rem] bg-gradient-to-r from-blue-700 via-sky-600 to-indigo-700 p-8 sm:p-10 text-white shadow-xl shadow-sky-500/20 border border-sky-400/20">
+        <div className="absolute -top-16 -right-16 w-80 h-80 bg-amber-400/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-16 -left-16 w-80 h-80 bg-blue-300/20 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
           <div className="max-w-xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-white text-[11px] font-semibold mb-3 border border-white/20">
-              <Sparkles className="w-3.5 h-3.5" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-[11px] font-semibold mb-3 border border-white/30">
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
               <span>Sistem Informasi Surat & Peminjaman Ruangan Fakultas</span>
             </div>
-            <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
+            <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-white leading-tight">
               Ingin Meminjam Ruangan?
             </h1>
-            <p className="mt-3 text-xs sm:text-sm text-indigo-100 font-normal leading-relaxed">
+            <p className="mt-3 text-xs sm:text-sm text-sky-100 font-normal leading-relaxed">
               Ajukan fasilitas kelas, aula, atau laboratorium fakultas secara cepat, transparan, dan terhubung langsung ke sistem tanda tangan digital berjenjang.
             </p>
 
@@ -248,37 +249,39 @@ export default async function MahasiswaDashboard() {
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Link
                 href="/dashboard/mahasiswa/ruangan"
-                className="px-5 py-2.5 rounded-full text-xs font-semibold bg-white text-indigo-600 hover:bg-indigo-50 active:scale-95 shadow-sm transition-all"
+                className="px-5 py-2.5 rounded-full text-xs font-bold bg-white text-blue-700 hover:bg-amber-50 active:scale-95 shadow-md shadow-slate-900/10 transition-all"
               >
                 Cari Ruangan Tersedia
               </Link>
               <Link
                 href="/dashboard/mahasiswa/peminjaman"
-                className="px-5 py-2.5 rounded-full text-xs font-semibold bg-white/20 hover:bg-white/30 text-white backdrop-blur-xs border border-white/20 active:scale-95 transition-all"
+                className="px-5 py-2.5 rounded-full text-xs font-semibold bg-white/20 hover:bg-white/30 text-white backdrop-blur-xs border border-white/25 active:scale-95 transition-all"
               >
                 Pantau Pengajuan Saya
               </Link>
               <Link
                 href="/dashboard/mahasiswa/alur-peminjaman"
-                className="px-5 py-2.5 rounded-full text-xs font-semibold bg-white/10 hover:bg-white/20 text-white backdrop-blur-xs border border-white/10 active:scale-95 transition-all"
+                className="px-5 py-2.5 rounded-full text-xs font-semibold bg-amber-500/80 hover:bg-amber-500 text-white backdrop-blur-xs border border-amber-400/40 active:scale-95 transition-all flex items-center gap-1.5"
               >
-                Lihat Panduan Alur
+                <span>Lihat Panduan Alur</span>
               </Link>
             </div>
           </div>
 
-          {/* Right Floating Badge Cards */}
-          <div className="hidden lg:flex items-center gap-3 shrink-0">
-            <div className="w-16 h-16 rounded-2xl bg-amber-100/90 text-amber-700 backdrop-blur-md flex items-center justify-center shadow-lg transform -rotate-3 hover:rotate-0 transition-transform">
-              <Building2 className="w-8 h-8" />
+          {/* Right Mascot Illustration & Warm Speech Bubble */}
+          <div className="relative flex items-center justify-center lg:justify-end shrink-0 pt-2 lg:pt-0">
+            {/* Friendly Speech Bubble */}
+            <div className="hidden xl:block absolute -top-4 -left-12 bg-white/95 text-slate-800 px-3.5 py-1.5 rounded-2xl rounded-br-xs shadow-lg border border-amber-200 text-xs font-bold z-20 animate-pulse">
+              Halo {nama.split(" ")[0]}! Siap kirim suratmu 🕊️✉️
             </div>
-            <div className="flex flex-col gap-3">
-              <div className="w-16 h-16 rounded-2xl bg-white/90 text-indigo-600 backdrop-blur-md flex items-center justify-center shadow-lg transform rotate-3 hover:rotate-0 transition-transform">
-                <PenTool className="w-7 h-7" />
-              </div>
-              <div className="w-16 h-16 rounded-2xl bg-rose-100/90 text-rose-600 backdrop-blur-md flex items-center justify-center shadow-lg transform -rotate-2 hover:rotate-0 transition-transform">
-                <Sparkles className="w-7 h-7" />
-              </div>
+            <div className="relative w-44 h-44 sm:w-52 sm:h-52 lg:w-56 lg:h-56 drop-shadow-2xl hover:scale-105 transition-transform duration-300">
+              <Image
+                src="/maskot1.png"
+                alt="Merpi Maskot SISFORA"
+                fill
+                className="object-contain"
+                priority
+              />
             </div>
           </div>
         </div>
@@ -330,7 +333,7 @@ export default async function MahasiswaDashboard() {
           <p className="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight mt-1">
             {ditahanCount}
           </p>
-          <p className="text-[11px] text-amber-600 font-medium mt-1">Pengajuan & penahanan jadwal</p>
+          <p className="text-[11px] text-amber-600 font-medium mt-1">Dalam proses verifikasi</p>
         </div>
 
         {/* Card 3: Total Ruangan Aktif */}
@@ -570,7 +573,7 @@ export default async function MahasiswaDashboard() {
                           : "bg-rose-500 text-white"
                       }`}
                     >
-                      {isAvailable ? "Tersedia" : isHeld ? "Ditahan / Diajukan" : "Sedang Digunakan"}
+                      {isAvailable ? "Tersedia" : isHeld ? "Sedang Diajukan" : "Sedang Digunakan"}
                     </span>
 
                     <span className="absolute bottom-3 left-3 text-xs font-bold px-2.5 py-1 rounded-xl bg-black/60 text-white backdrop-blur-md">
@@ -645,7 +648,7 @@ export default async function MahasiswaDashboard() {
                         </Link>
                       ) : (
                         <span className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-400 cursor-not-allowed">
-                          {isHeld ? "Sedang Ditahan" : "Tidak Tersedia"}
+                          {isHeld ? "Sedang Diajukan" : "Tidak Tersedia"}
                         </span>
                       )}
                     </div>

@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Send, Sparkles, Loader2, Bot, User, Building2, ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -29,7 +30,7 @@ export default function AIPencarian() {
     {
       role: "assistant",
       content:
-        "Halo! Saya asisten pintar SISFORA. Anda bisa bertanya tentang ketersediaan ruangan, kapasitas, atau fasilitas dalam bahasa sehari-hari. Contoh: \"Carikan ruangan seminar untuk 50 orang yang ada AC dan proyektor di lantai 2\".",
+        "Halo! Aku Merpi, maskot & asisten pintar SISFORA! 🕊️✉️ Kamu bisa bertanya tentang ketersediaan ruangan, kapasitas, atau fasilitas dalam bahasa santai sehari-hari. Contoh: \"Carikan ruangan seminar untuk 50 orang yang ada AC dan proyektor di lantai 2\".",
     },
   ]);
   const [input, setInput] = useState("");
@@ -99,17 +100,26 @@ export default function AIPencarian() {
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-100 shadow-2xs overflow-hidden flex flex-col h-[480px]">
+    <div className="bg-white rounded-3xl border border-amber-100/80 shadow-2xs overflow-hidden flex flex-col h-[480px]">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-[#4F46E5] to-[#3B82F6] flex items-center gap-3">
-        <div className="w-9 h-9 rounded-2xl bg-white/20 flex items-center justify-center text-white shrink-0">
-          <Sparkles className="w-5 h-5" />
+      <div className="px-6 py-4 border-b border-amber-100/80 bg-gradient-to-r from-blue-700 via-sky-600 to-amber-500 flex items-center gap-3">
+        <div className="relative w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md p-1 flex items-center justify-center border border-white/30 shrink-0 shadow-2xs">
+          <Image
+            src="/maskot1.png"
+            alt="Merpi"
+            width={34}
+            height={34}
+            className="object-contain"
+          />
         </div>
         <div>
-          <h3 className="text-sm font-bold text-white">AI Assistant Pencari Ruangan</h3>
-          <p className="text-[11px] text-indigo-100">Ketik kebutuhan Anda — AI menganalisis spesifikasi ruangan fakultas</p>
+          <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+            <span>Merpi — Asisten Cerdas SISFORA</span>
+            <span className="text-amber-200">🕊️</span>
+          </h3>
+          <p className="text-[11px] text-blue-100">Ketik kebutuhan Anda — Merpi mencari ruangan yang pas di kampus</p>
         </div>
-        <div className="ml-auto flex items-center gap-1.5 px-3 py-1 bg-white/20 rounded-full backdrop-blur-xs">
+        <div className="ml-auto flex items-center gap-1.5 px-3 py-1 bg-white/20 rounded-full backdrop-blur-xs border border-white/20">
           <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />
           <span className="text-[11px] text-white font-semibold">Siap Membantu</span>
         </div>
@@ -120,22 +130,28 @@ export default function AIPencarian() {
         {messages.map((msg, i) => (
           <div key={i} className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
             {/* Avatar */}
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                msg.role === "assistant"
-                  ? "bg-indigo-50 text-indigo-600"
-                  : "bg-slate-200 text-slate-700 font-bold text-xs"
-              }`}
-            >
-              {msg.role === "assistant" ? <Bot size={16} /> : <User size={16} />}
-            </div>
+            {msg.role === "assistant" ? (
+              <div className="relative w-8 h-8 rounded-full bg-amber-100 border border-amber-200/90 flex items-center justify-center p-0.5 shrink-0 shadow-2xs">
+                <Image
+                  src="/maskot1.png"
+                  alt="Merpi"
+                  width={26}
+                  height={26}
+                  className="object-contain"
+                />
+              </div>
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center shrink-0">
+                <User size={16} />
+              </div>
+            )}
 
             <div className={`max-w-[85%] space-y-2 ${msg.role === "user" ? "items-end" : "items-start"} flex flex-col`}>
               <div
                 className={`px-4 py-3 rounded-2xl text-xs leading-relaxed ${
                   msg.role === "user"
-                    ? "bg-indigo-600 text-white rounded-tr-xs"
-                    : "bg-slate-50 text-slate-700 border border-slate-100 rounded-tl-xs"
+                    ? "bg-blue-600 text-white rounded-tr-xs shadow-xs"
+                    : "bg-amber-50/60 text-slate-800 border border-amber-100/80 rounded-tl-xs"
                 }`}
               >
                 {msg.content}
@@ -203,12 +219,18 @@ export default function AIPencarian() {
 
         {loading && (
           <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-              <Bot size={16} />
+            <div className="relative w-8 h-8 rounded-full bg-amber-100 border border-amber-200/90 flex items-center justify-center p-0.5 shrink-0 shadow-2xs">
+              <Image
+                src="/maskot1.png"
+                alt="Merpi"
+                width={26}
+                height={26}
+                className="object-contain"
+              />
             </div>
-            <div className="px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl rounded-tl-xs flex items-center gap-2 text-xs text-slate-500">
-              <Loader2 className="w-3.5 h-3.5 text-indigo-600 animate-spin" />
-              <span>AI sedang menganalisis database ruangan...</span>
+            <div className="px-4 py-3 bg-amber-50/70 border border-amber-200/60 rounded-2xl rounded-tl-xs flex items-center gap-2 text-xs text-amber-900 font-medium">
+              <Loader2 className="w-3.5 h-3.5 text-amber-600 animate-spin" />
+              <span>Merpi sedang mencocokkan jadwal & fasilitas ruangan...</span>
             </div>
           </div>
         )}
@@ -216,20 +238,21 @@ export default function AIPencarian() {
       </div>
 
       {/* Input */}
-      <div className="px-4 py-3 border-t border-slate-100 bg-white">
+      <div className="px-4 py-3 border-t border-amber-100/70 bg-white">
         <div className="flex items-center gap-2">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder="Tanyakan rekomendasi ruangan (misal: 'ruangan ber-AC kapasitas 80 orang')..."
-            className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all text-slate-800"
+            placeholder="Tanyakan ke Merpi (misal: 'ruangan seminar 60 orang lantai 2 yang ada proyektor')..."
+            className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 focus:bg-white transition-all text-slate-800"
           />
           <button
             onClick={handleSend}
             disabled={!input.trim() || loading}
-            className="w-10 h-10 rounded-2xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white flex items-center justify-center transition-all cursor-pointer shadow-sm disabled:cursor-not-allowed shrink-0"
+            className="w-10 h-10 rounded-2xl bg-gradient-to-r from-blue-700 via-sky-600 to-amber-500 hover:from-blue-800 hover:to-amber-600 disabled:opacity-40 text-white flex items-center justify-center transition-all cursor-pointer shadow-md shadow-sky-500/20 disabled:cursor-not-allowed shrink-0"
+            title="Kirim pertanyaan"
           >
             <Send size={15} />
           </button>

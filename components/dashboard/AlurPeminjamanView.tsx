@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   GitFork,
   Building2,
@@ -29,50 +30,53 @@ export default function AlurPeminjamanView({ role }: AlurPeminjamanViewProps) {
 
   return (
     <div className="space-y-8">
-      {/* Hero Header Card */}
-      <div className="relative overflow-hidden rounded-[2.25rem] bg-gradient-to-r from-indigo-600 via-indigo-600 to-blue-600 p-8 sm:p-10 text-white shadow-xl shadow-indigo-500/15">
-        <div className="relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-xs font-semibold mb-3">
-            <GitFork className="w-3.5 h-3.5" />
-            <span>Panduan Prosedur Fakultas</span>
-          </div>
-          <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
-            Alur Pengajuan & Peminjaman Ruangan
-          </h1>
-          <p className="mt-3 text-xs sm:text-sm text-indigo-100 font-normal leading-relaxed">
-            Pahami tahapan pengajuan ruangan mulai dari pencarian fasilitas, pengunggahan surat, proses tanda tangan digital, hingga terbitnya izin resmi dari Dekanat.
-          </p>
+      {/* Hero Header Card with Mascot */}
+      <div className="relative overflow-hidden rounded-[2.25rem] bg-gradient-to-r from-blue-700 via-sky-600 to-indigo-700 p-8 sm:p-10 text-white shadow-xl shadow-sky-500/20 border border-sky-400/20">
+        <div className="absolute -top-16 -right-16 w-80 h-80 bg-amber-400/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-16 -left-16 w-80 h-80 bg-blue-300/20 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            <Link
-              href={role === "ketua_organisasi" ? "/dashboard/ketua-organisasi/ruangan" : "/dashboard/mahasiswa/ruangan"}
-              className="px-5 py-2.5 rounded-full text-xs font-semibold bg-white text-indigo-600 hover:bg-indigo-50 active:scale-95 shadow-sm transition-all"
-            >
-              Mulai Cari Ruangan
-            </Link>
-            <Link
-              href={role === "ketua_organisasi" ? "/dashboard/ketua-organisasi/peminjaman" : "/dashboard/mahasiswa/peminjaman"}
-              className="px-5 py-2.5 rounded-full text-xs font-semibold bg-white/20 hover:bg-white/30 text-white backdrop-blur-xs border border-white/20 active:scale-95 transition-all"
-            >
-              Pantau Pengajuan Saya
-            </Link>
-          </div>
-        </div>
-
-        {/* Decorative Floating Badges */}
-        <div className="hidden lg:flex items-center gap-3 absolute right-10 top-1/2 -translate-y-1/2">
-          <div className="w-20 h-20 rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 flex flex-col items-center justify-center text-white shadow-lg">
-            <FileText className="w-7 h-7 text-amber-200" />
-            <span className="text-[10px] font-bold mt-1">Upload</span>
-          </div>
-          <div className="flex flex-col gap-3">
-            <div className="w-20 h-20 rounded-3xl bg-white/15 backdrop-blur-md border border-white/20 flex flex-col items-center justify-center text-white shadow-lg">
-              <PenTool className="w-7 h-7 text-sky-200" />
-              <span className="text-[10px] font-bold mt-1">Digital TTD</span>
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-xs font-semibold mb-3 border border-white/25">
+              <GitFork className="w-3.5 h-3.5 text-amber-300" />
+              <span>Panduan Prosedur Fakultas</span>
             </div>
-            <div className="w-20 h-20 rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 flex flex-col items-center justify-center text-white shadow-lg">
-              <CheckCircle2 className="w-7 h-7 text-emerald-200" />
-              <span className="text-[10px] font-bold mt-1">Approved</span>
+            <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-white leading-tight">
+              Alur Pengajuan & Peminjaman Ruangan
+            </h1>
+            <p className="mt-3 text-xs sm:text-sm text-sky-100 font-normal leading-relaxed">
+              Pahami tahapan pengajuan ruangan mulai dari pencarian fasilitas, pengunggahan surat, proses tanda tangan digital, hingga terbitnya izin resmi dari Dekanat.
+            </p>
+
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <Link
+                href={role === "ketua_organisasi" ? "/dashboard/ketua-organisasi/ruangan" : "/dashboard/mahasiswa/ruangan"}
+                className="px-5 py-2.5 rounded-full text-xs font-bold bg-white text-blue-700 hover:bg-amber-50 active:scale-95 shadow-md shadow-slate-900/10 transition-all"
+              >
+                Mulai Cari Ruangan
+              </Link>
+              <Link
+                href={role === "ketua_organisasi" ? "/dashboard/ketua-organisasi/peminjaman" : "/dashboard/mahasiswa/peminjaman"}
+                className="px-5 py-2.5 rounded-full text-xs font-semibold bg-white/20 hover:bg-white/30 text-white backdrop-blur-xs border border-white/25 active:scale-95 transition-all"
+              >
+                Pantau Pengajuan Saya
+              </Link>
+            </div>
+          </div>
+
+          {/* Right Mascot Illustration & Warm Speech Bubble */}
+          <div className="relative flex items-center justify-center lg:justify-end shrink-0 pt-2 lg:pt-0">
+            <div className="hidden xl:block absolute -top-4 -left-14 bg-white/95 text-slate-800 px-3.5 py-1.5 rounded-2xl rounded-br-xs shadow-lg border border-amber-200 text-xs font-bold z-20 animate-pulse">
+              Merpi antar suratmu aman! 🕊️✉️
+            </div>
+            <div className="relative w-44 h-44 sm:w-52 sm:h-52 lg:w-56 lg:h-56 drop-shadow-2xl hover:scale-105 transition-transform duration-300">
+              <Image
+                src="/maskot1.png"
+                alt="Merpi Maskot SISFORA"
+                fill
+                className="object-contain"
+                priority
+              />
             </div>
           </div>
         </div>
@@ -118,164 +122,171 @@ export default function AlurPeminjamanView({ role }: AlurPeminjamanViewProps) {
       {/* Interactive Step Timeline */}
       {activeTab === "organisasi" ? (
         /* ALUR ORGANISASI */
-        <div className="bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 shadow-2xs space-y-8">
-          <div className="border-b border-slate-100 pb-5">
+        <div className="bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 shadow-2xs space-y-6">
+          <div className="border-b border-slate-100 pb-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-violet-50 text-violet-700 text-xs font-bold uppercase tracking-wider mb-2">
               <Users className="w-3.5 h-3.5" />
-              <span>Jalur Persetujuan: Mahasiswa ➔ Ketua Organisasi ➔ Wakil Dekan 3</span>
+              <span>Mahasiswa ➔ Ketua Organisasi ➔ Wakil Dekan 3</span>
             </div>
-            <h3 className="text-lg font-bold text-slate-900">
-              Alur Peminjaman untuk Acara Organisasi (HIMA / BEM / UKM)
+            <h3 className="text-base sm:text-lg font-bold text-slate-900">
+              Alur Peminjaman Kegiatan Organisasi (HIMA / BEM / UKM)
             </h3>
             <p className="text-xs text-slate-500 mt-1">
-              Surat peminjaman wajib diverifikasi dan ditandatangani terlebih dahulu oleh Ketua Organisasi terkait sebelum diajukan ke Wakil Dekan 3.
+              Surat peminjaman diverifikasi dan ditandatangani oleh Ketua Organisasi terlebih dahulu sebelum disetujui WD3.
             </p>
           </div>
 
           {/* Stepper Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 relative">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 sm:gap-5 relative">
             {/* Step 1 */}
-            <div className="bg-slate-50/70 border border-slate-100 rounded-3xl p-5 flex flex-col justify-between relative group hover:border-indigo-200 hover:bg-white transition-all">
+            <div className="bg-slate-50/70 border border-slate-100 rounded-2xl p-4 flex flex-col justify-between hover:border-indigo-200 hover:bg-white transition-all">
               <div>
-                <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-sm mb-4">
+                <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-sm mb-3">
                   1
                 </div>
-                <h4 className="text-sm font-bold text-slate-800">
-                  Cari Ruangan & Tahan Jadwal
+                <h4 className="text-xs sm:text-sm font-bold text-slate-800">
+                  Pilih Ruangan & Jadwal
                 </h4>
-                <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                  Mahasiswa mencari ruangan yang berstatus <strong className="text-emerald-600">Tersedia</strong>. Saat membuka formulir pengajuan, sistem secara otomatis menahan jadwal ruangan (<span className="text-amber-600 font-semibold">Kuning / Ditahan</span>) selama 15 menit agar tidak saling berebut dengan mahasiswa lain.
+                <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                  Cari ruangan berstatus <strong className="text-emerald-600">Tersedia</strong> sesuai tanggal acara (sistem <em>First-Come, First-Served</em>).
                 </p>
               </div>
-              <div className="mt-4 pt-3 border-t border-slate-200/60 text-[11px] text-slate-400 font-medium">
-                ⏱️ Penahanan jadwal otomatis
+              <div className="mt-3 pt-2.5 border-t border-slate-200/60 text-[11px] text-slate-400 font-medium flex items-center gap-1">
+                <span>⏱️</span>
+                <span>Bebas bentrok jadwal</span>
               </div>
             </div>
 
             {/* Step 2 */}
-            <div className="bg-slate-50/70 border border-slate-100 rounded-3xl p-5 flex flex-col justify-between relative group hover:border-indigo-200 hover:bg-white transition-all">
+            <div className="bg-slate-50/70 border border-slate-100 rounded-2xl p-4 flex flex-col justify-between hover:border-indigo-200 hover:bg-white transition-all">
               <div>
-                <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-sm mb-4">
+                <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-sm mb-3">
                   2
                 </div>
-                <h4 className="text-sm font-bold text-slate-800">
-                  Unggah Berkas Proposal / Surat
+                <h4 className="text-xs sm:text-sm font-bold text-slate-800">
+                  Unggah Surat Proposal
                 </h4>
-                <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                  Pilih kategori <strong>Organisasi</strong>, lalu unggah berkas surat permohonan dalam format PDF. Sistem akan langsung mencatat pengajuan dan meneruskan dokumen ke dashboard <strong>Ketua Organisasi</strong>.
+                <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                  Isi data kegiatan organisasi dan unggah berkas surat permohonan dalam format <strong>PDF</strong>.
                 </p>
               </div>
-              <div className="mt-4 pt-3 border-t border-slate-200/60 text-[11px] text-indigo-600 font-medium">
-                📄 Status: Menunggu Ketua Org
+              <div className="mt-3 pt-2.5 border-t border-slate-200/60 text-[11px] text-indigo-600 font-medium flex items-center gap-1">
+                <span>📄</span>
+                <span>Menunggu Ketua Org</span>
               </div>
             </div>
 
             {/* Step 3 */}
-            <div className="bg-slate-50/70 border border-slate-100 rounded-3xl p-5 flex flex-col justify-between relative group hover:border-indigo-200 hover:bg-white transition-all">
+            <div className="bg-slate-50/70 border border-slate-100 rounded-2xl p-4 flex flex-col justify-between hover:border-indigo-200 hover:bg-white transition-all">
               <div>
-                <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-sm mb-4">
+                <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-sm mb-3">
                   3
                 </div>
-                <h4 className="text-sm font-bold text-slate-800">
-                  Verifikasi & TTD Ketua Organisasi
+                <h4 className="text-xs sm:text-sm font-bold text-slate-800">
+                  TTD Digital Ketua Ormawa
                 </h4>
-                <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                  Ketua Organisasi memeriksa kesesuaian anggota dan kepentingannya. Jika sesuai, Ketua Organisasi menandatangani surat secara digital di aplikasi. Dokumen awal <strong>langsung ditimpa</strong> dengan file bertanda tangan, kemudian diteruskan ke <strong>Wakil Dekan 3</strong>.
+                <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                  Ketua Organisasi memeriksa berkas dan membubuhkan tanda tangan digital. Dokumen langsung ditimpa.
                 </p>
               </div>
-              <div className="mt-4 pt-3 border-t border-slate-200/60 text-[11px] text-violet-600 font-medium">
-                ✍️ Tanda tangan digital via sistem
+              <div className="mt-3 pt-2.5 border-t border-slate-200/60 text-[11px] text-violet-600 font-medium flex items-center gap-1">
+                <span>✍️</span>
+                <span>TTD sah di aplikasi</span>
               </div>
             </div>
 
             {/* Step 4 */}
-            <div className="bg-slate-50/70 border border-slate-100 rounded-3xl p-5 flex flex-col justify-between relative group hover:border-indigo-200 hover:bg-white transition-all">
+            <div className="bg-slate-50/70 border border-slate-100 rounded-2xl p-4 flex flex-col justify-between hover:border-emerald-200 hover:bg-white transition-all">
               <div>
-                <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow-sm mb-4">
+                <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shadow-sm mb-3">
                   4
                 </div>
-                <h4 className="text-sm font-bold text-slate-800">
-                  Persetujuan Akhir Wakil Dekan 3
+                <h4 className="text-xs sm:text-sm font-bold text-slate-800">
+                  Persetujuan Akhir WD3
                 </h4>
-                <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                  Wakil Dekan 3 melakukan peninjauan akhir dan membubuhkan tanda tangan digital dekanat. Dokumen kembali ditimpa dengan versi final yang sah. Status ruangan berubah menjadi <strong>Disetujui</strong> dan mahasiswa dapat mengunduh surat izin resmi.
+                <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                  Wakil Dekan 3 menandatangani izin resmi. Status peminjaman disetujui dan surat izin siap diunduh.
                 </p>
               </div>
-              <div className="mt-4 pt-3 border-t border-slate-200/60 text-[11px] text-emerald-600 font-medium">
-                ✅ Selesai & Surat Resmi Terbit
+              <div className="mt-3 pt-2.5 border-t border-slate-200/60 text-[11px] text-emerald-600 font-medium flex items-center gap-1">
+                <span>✅</span>
+                <span>Surat izin resmi terbit</span>
               </div>
             </div>
           </div>
         </div>
       ) : (
         /* ALUR UMUM */
-        <div className="bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 shadow-2xs space-y-8">
-          <div className="border-b border-slate-100 pb-5">
+        <div className="bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 shadow-2xs space-y-6">
+          <div className="border-b border-slate-100 pb-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-wider mb-2">
               <Building2 className="w-3.5 h-3.5" />
-              <span>Jalur Persetujuan Langsung: Mahasiswa ➔ Wakil Dekan 3</span>
+              <span>Mahasiswa ➔ Wakil Dekan 3</span>
             </div>
-            <h3 className="text-lg font-bold text-slate-900">
-              Alur Peminjaman untuk Kepentingan Umum / Mandiri
+            <h3 className="text-base sm:text-lg font-bold text-slate-900">
+              Alur Peminjaman Kegiatan Umum / Mandiri
             </h3>
             <p className="text-xs text-slate-500 mt-1">
-              Untuk kegiatan akademik non-organisasi (seminar skripsi, riset kelompok, diskusi mandiri), berkas diteruskan langsung ke Wakil Dekan 3 tanpa melalui ketua organisasi.
+              Untuk seminar, diskusi, atau riset kelompok langsung diteruskan ke WD3 tanpa melalui ketua ormawa.
             </p>
           </div>
 
           {/* Stepper Grid (3 Steps) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 relative">
             {/* Step 1 */}
-            <div className="bg-slate-50/70 border border-slate-100 rounded-3xl p-5 flex flex-col justify-between relative group hover:border-indigo-200 hover:bg-white transition-all">
+            <div className="bg-slate-50/70 border border-slate-100 rounded-2xl p-4 flex flex-col justify-between hover:border-indigo-200 hover:bg-white transition-all">
               <div>
-                <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-sm mb-4">
+                <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-sm mb-3">
                   1
                 </div>
-                <h4 className="text-sm font-bold text-slate-800">
-                  Cari Ruangan & Tahan Jadwal
+                <h4 className="text-xs sm:text-sm font-bold text-slate-800">
+                  Pilih Ruangan & Jadwal
                 </h4>
-                <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                  Mahasiswa mencari ruangan yang tersedia berdasarkan kapasitas, fasilitas, atau denah. Jadwal ruangan otomatis ditahan sementara (status: <span className="text-amber-600 font-semibold">Ditahan</span>) agar tidak bentrok dengan mahasiswa lain saat pengisian form.
+                <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                  Cari ruangan kelas atau lab yang kosong sesuai kebutuhan tanggal dan jam kegiatan (FCFS).
                 </p>
               </div>
-              <div className="mt-4 pt-3 border-t border-slate-200/60 text-[11px] text-slate-400 font-medium">
-                ⏱️ Penahanan jadwal 15 menit
+              <div className="mt-3 pt-2.5 border-t border-slate-200/60 text-[11px] text-slate-400 font-medium flex items-center gap-1">
+                <span>⏱️</span>
+                <span>First-Come, First-Served</span>
               </div>
             </div>
 
             {/* Step 2 */}
-            <div className="bg-slate-50/70 border border-slate-100 rounded-3xl p-5 flex flex-col justify-between relative group hover:border-indigo-200 hover:bg-white transition-all">
+            <div className="bg-slate-50/70 border border-slate-100 rounded-2xl p-4 flex flex-col justify-between hover:border-indigo-200 hover:bg-white transition-all">
               <div>
-                <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-sm mb-4">
+                <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-sm mb-3">
                   2
                 </div>
-                <h4 className="text-sm font-bold text-slate-800">
-                  Unggah Surat Permohonan Umum
+                <h4 className="text-xs sm:text-sm font-bold text-slate-800">
+                  Unggah Surat Permohonan
                 </h4>
-                <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                  Pilih kategori <strong>Umum</strong> pada form peminjaman dan unggah surat permohonan. Sistem secara otomatis meneruskan berkas langsung ke antrean verifikasi <strong>Wakil Dekan 3</strong>.
+                <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                  Pilih kategori <strong>Umum</strong> dan unggah file surat permohonan peminjaman ruangan (PDF).
                 </p>
               </div>
-              <div className="mt-4 pt-3 border-t border-slate-200/60 text-[11px] text-blue-600 font-medium">
-                📄 Status: Menunggu WD3
+              <div className="mt-3 pt-2.5 border-t border-slate-200/60 text-[11px] text-blue-600 font-medium flex items-center gap-1">
+                <span>📄</span>
+                <span>Menunggu review WD3</span>
               </div>
             </div>
 
             {/* Step 3 */}
-            <div className="bg-slate-50/70 border border-slate-100 rounded-3xl p-5 flex flex-col justify-between relative group hover:border-indigo-200 hover:bg-white transition-all">
+            <div className="bg-slate-50/70 border border-slate-100 rounded-2xl p-4 flex flex-col justify-between hover:border-emerald-200 hover:bg-white transition-all">
               <div>
-                <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow-sm mb-4">
+                <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shadow-sm mb-3">
                   3
                 </div>
-                <h4 className="text-sm font-bold text-slate-800">
-                  Tanda Tangan & Persetujuan WD3
+                <h4 className="text-xs sm:text-sm font-bold text-slate-800">
+                  TTD & Persetujuan WD3
                 </h4>
-                <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                  Wakil Dekan 3 memeriksa urgensi peminjaman dan membubuhkan tanda tangan digital di aplikasi. Dokumen ditimpa dengan versi bertanda tangan resmi, dan ruangan siap digunakan sesuai jadwal yang disetujui.
+                <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                  Wakil Dekan 3 menandatangani berkas secara digital. Izin resmi terbit dan jadwal ruangan terkunci sah.
                 </p>
               </div>
-              <div className="mt-4 pt-3 border-t border-slate-200/60 text-[11px] text-emerald-600 font-medium">
-                ✅ Selesai & Disetujui
+              <div className="mt-3 pt-2.5 border-t border-slate-200/60 text-[11px] text-emerald-600 font-medium flex items-center gap-1">
+                <span>✅</span>
+                <span>Selesai & Disetujui</span>
               </div>
             </div>
           </div>
@@ -283,43 +294,43 @@ export default function AlurPeminjamanView({ role }: AlurPeminjamanViewProps) {
       )}
 
       {/* 3 Keunggulan & Prinsip Sistem SISFORA */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
         {/* Card 1: Penghematan Memori Dokumen */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-2xs">
-          <div className="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4">
-            <HardDrive className="w-6 h-6" />
+        <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-2xs">
+          <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3">
+            <HardDrive className="w-5 h-5" />
           </div>
-          <h3 className="text-sm font-bold text-slate-800">
-            Penyimpanan Dokumen Tertimpa (Hemat Memori)
+          <h3 className="text-xs sm:text-sm font-bold text-slate-800">
+            Dokumen Tertimpa Otomatis
           </h3>
-          <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-            Setiap kali surat ditandatangani oleh Ketua Organisasi atau Wakil Dekan 3, berkas lama secara efisien ditimpa dengan versi terbaru. Sistem tidak menduplikasi file PDF di cloud storage, sehingga hemat memori dan selalu menyajikan dokumen paling mutakhir.
+          <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+            Surat bertanda tangan digital menimpa berkas lama. Penyimpanan cloud hemat dan file selalu yang termutakhir.
           </p>
         </div>
 
         {/* Card 2: Log Riwayat Realtime */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-2xs">
-          <div className="w-11 h-11 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4">
-            <Clock className="w-6 h-6" />
+        <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-2xs">
+          <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
+            <Clock className="w-5 h-5" />
           </div>
-          <h3 className="text-sm font-bold text-slate-800">
-            Log Perkembangan Real-Time
+          <h3 className="text-xs sm:text-sm font-bold text-slate-800">
+            Log Pelacakan Transparan
           </h3>
-          <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-            Meskipun dokumen ditimpa, seluruh jejak aktivitas (siapa yang menandatangani, waktu persetujuan, dan catatan verifikator) dicatat secara terpisah di tabel log sistem dan ditampilkan di halaman Status Peminjaman.
+          <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+            Setiap aksi tanda tangan dan persetujuan terekam realtime di riwayat pengajuan sehingga status selalu jelas.
           </p>
         </div>
 
         {/* Card 3: Fitur AI Cerdas */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-2xs">
-          <div className="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4">
-            <Sparkles className="w-6 h-6" />
+        <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-2xs">
+          <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-3">
+            <Sparkles className="w-5 h-5" />
           </div>
-          <h3 className="text-sm font-bold text-slate-800">
-            Pencarian Cerdas Berbasis AI
+          <h3 className="text-xs sm:text-sm font-bold text-slate-800">
+            Pencarian Cerdas AI
           </h3>
-          <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-            Tidak perlu mencari manual satu per satu. Pengguna cukup mengetikkan prompt kebutuhan di Beranda (misal: kapasitas, lantai, fasilitas AC/proyektor), dan AI akan menganalisis database serta mencarikan ruangan terbaik.
+          <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+            Cari ruangan cukup ketik kebutuhan acara di beranda. AI otomatis memfilter ruangan, fasilitas, dan jadwal kosong.
           </p>
         </div>
       </div>

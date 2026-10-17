@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Sparkles,
@@ -133,18 +134,46 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F0F4FA] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 antialiased font-sans">
-      <div className="max-w-md w-full mx-auto">
+    <div className="min-h-screen bg-[#FAF9F5] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 antialiased font-sans relative overflow-hidden">
+      {/* Warm Ambient Glows */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-gradient-to-tr from-amber-400/10 via-sky-400/15 to-transparent rounded-full blur-3xl pointer-events-none" />
+
+      <div className="max-w-md w-full mx-auto relative z-10">
+        {/* Mascot Peeking Playfully Outside Card */}
+        <div className="absolute -top-16 -right-5 sm:-right-10 z-20 flex flex-col items-end pointer-events-none">
+          <div className="mb-1 mr-1 bg-white/95 backdrop-blur-xs px-3 py-1 rounded-2xl rounded-br-xs shadow-md border border-amber-200 text-[11px] font-bold text-slate-800 hidden sm:block animate-pulse">
+            Yuk masuk! 🕊️✉️
+          </div>
+          <div className="relative w-24 h-24 sm:w-28 sm:h-28 drop-shadow-xl transition-transform hover:scale-105">
+            <Image
+              src="/maskot1.png"
+              alt="Maskot SISFORA Merpi"
+              width={112}
+              height={112}
+              className="object-contain"
+              priority
+            />
+          </div>
+        </div>
+
         {/* Top Gradient Hero Card */}
-        <div className="relative overflow-hidden rounded-t-[2.5rem] bg-gradient-to-b from-blue-700 via-blue-600 to-sky-400 p-8 text-center text-white shadow-lg shadow-blue-500/15">
+        <div className="relative overflow-hidden rounded-t-[2.5rem] bg-gradient-to-br from-blue-700 via-sky-600 to-amber-500 p-8 text-center text-white shadow-xl shadow-blue-500/20">
           <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none -mr-10 -mt-10" />
-          <div className="absolute bottom-0 left-0 w-40 h-40 bg-sky-200/20 rounded-full blur-xl pointer-events-none -ml-10 -mb-10" />
+          <div className="absolute bottom-0 left-0 w-40 h-40 bg-amber-300/20 rounded-full blur-xl pointer-events-none -ml-10 -mb-10" />
 
           <div className="relative z-10 flex flex-col items-center">
-            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-white shadow-md mb-3">
-              <Sparkles className="w-6 h-6 text-sky-200" />
+            <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md border border-white/40 flex items-center justify-center p-1 shadow-lg mb-3">
+              <Image
+                src="/maskot1.png"
+                alt="Sisfora Logo"
+                width={38}
+                height={38}
+                className="object-contain"
+              />
             </div>
-            <h1 className="text-2xl font-extrabold tracking-tight">SISFORA</h1>
+            <h1 className="text-2xl font-black tracking-tight">
+              SISFORA<span className="text-amber-300">.</span>
+            </h1>
             <p className="text-xs text-blue-100/90 mt-1 max-w-xs font-normal">
               Sistem Pengajuan & Peminjaman Ruangan Fakultas
             </p>
@@ -152,13 +181,13 @@ function LoginForm() {
         </div>
 
         {/* Form Container */}
-        <div className="bg-white py-8 px-6 sm:px-10 rounded-b-[2.5rem] border-x border-b border-slate-100 shadow-xl shadow-slate-200/70">
+        <div className="bg-white py-8 px-6 sm:px-10 rounded-b-[2.5rem] border-x border-b border-amber-100/80 shadow-xl shadow-amber-500/5">
           <div className="mb-6 text-center">
             <h2 className="text-lg font-bold text-slate-800">
               Masuk ke Akun Anda
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              Silakan masukkan kredensial akun Anda
+              Silakan masukkan kredensial akun terdaftar Anda
             </p>
           </div>
 
@@ -204,7 +233,7 @@ function LoginForm() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="nama@email.com"
-                  className="block w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="block w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all"
                 />
               </div>
             </div>
@@ -224,7 +253,7 @@ function LoginForm() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="block w-full pl-10 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="block w-full pl-10 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all"
                 />
                 <button
                   type="button"
@@ -245,7 +274,7 @@ function LoginForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center items-center py-3 px-5 rounded-full shadow-md shadow-blue-500/25 text-sm font-semibold text-white bg-gradient-to-r from-blue-700 via-blue-600 to-sky-500 hover:from-blue-800 hover:to-sky-600 active:scale-[0.99] focus:outline-none cursor-pointer transition-all disabled:opacity-70 gap-2"
+                className="w-full flex justify-center items-center py-3 px-5 rounded-full shadow-md shadow-sky-500/25 text-sm font-semibold text-white bg-gradient-to-r from-blue-700 via-sky-600 to-amber-500 hover:from-blue-800 hover:to-amber-600 active:scale-[0.99] focus:outline-none cursor-pointer transition-all disabled:opacity-70 gap-2"
               >
                 {loading ? (
                   <>
@@ -266,7 +295,7 @@ function LoginForm() {
                 Belum memiliki akun mahasiswa?{" "}
                 <Link
                   href="/register"
-                  className="font-semibold text-blue-600 hover:text-blue-700 hover:underline"
+                  className="font-semibold text-sky-600 hover:text-amber-600 hover:underline"
                 >
                   Daftar di sini
                 </Link>

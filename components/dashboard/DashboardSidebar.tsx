@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Sparkles,
@@ -97,17 +98,24 @@ export default function DashboardSidebar({ role, nama, nim }: DashboardSidebarPr
       }`}
     >
       {/* Brand Header */}
-      <div className="p-6 pb-4 flex items-center justify-between">
+      <div className="p-5 pb-4 flex items-center justify-between border-b border-amber-50/80">
         <Link href={`/dashboard/${role === "ketua_organisasi" ? "ketua-organisasi" : role}`} className="flex items-center gap-3 group">
-          <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform shrink-0">
-            <Sparkles className="w-5 h-5" />
+          <div className="relative w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-500 via-blue-600 to-indigo-600 p-1 flex items-center justify-center shadow-md shadow-sky-500/25 group-hover:scale-105 group-hover:rotate-3 transition-all shrink-0 border border-sky-300/40">
+            <Image
+              src="/maskot1.png"
+              alt="Sisfora Mascot"
+              width={34}
+              height={34}
+              className="object-contain drop-shadow-xs"
+              priority
+            />
           </div>
           {!collapsed && (
             <div className="overflow-hidden">
-              <span className="text-xl font-bold tracking-tight text-slate-900 block leading-tight">
-                Sisfora
+              <span className="text-xl font-black tracking-tight text-slate-900 block leading-tight">
+                Sisfora<span className="text-amber-500">.</span>
               </span>
-              <span className="text-[10px] font-medium text-slate-400 block tracking-wider uppercase">
+              <span className="text-[10px] font-semibold text-amber-800/80 block tracking-wider uppercase">
                 Portal Fasilitas
               </span>
             </div>
@@ -116,7 +124,7 @@ export default function DashboardSidebar({ role, nama, nim }: DashboardSidebarPr
       </div>
 
       {/* Main Navigation */}
-      <div className="flex-1 px-4 py-2 flex flex-col justify-between overflow-y-auto">
+      <div className="flex-1 px-4 py-3 flex flex-col justify-between overflow-y-auto">
         <div className="space-y-6">
           {/* Main Menu Section */}
           <div>
@@ -139,14 +147,14 @@ export default function DashboardSidebar({ role, nama, nim }: DashboardSidebarPr
                     href={item.href}
                     className={`flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-sm transition-all group ${
                       isActive
-                        ? "bg-[#ECEFFE] text-indigo-600 font-semibold shadow-2xs"
-                        : "text-slate-500 hover:text-slate-900 hover:bg-slate-50 font-medium"
+                        ? "bg-gradient-to-r from-sky-50 via-blue-50/70 to-amber-50/40 text-blue-700 font-semibold shadow-2xs border-r-3 border-amber-500"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-amber-50/40 font-medium"
                     } ${collapsed ? "justify-center px-0" : ""}`}
                     title={collapsed ? item.label : undefined}
                   >
                     <Icon
                       className={`w-5 h-5 shrink-0 transition-colors ${
-                        isActive ? "text-indigo-600" : "text-slate-400 group-hover:text-slate-600"
+                        isActive ? "text-blue-600" : "text-slate-400 group-hover:text-amber-600"
                       }`}
                     />
                     {!collapsed && <span className="truncate">{item.label}</span>}
@@ -169,12 +177,12 @@ export default function DashboardSidebar({ role, nama, nim }: DashboardSidebarPr
                   href={settingsHref}
                   className={`flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-sm transition-all group ${
                     pathname === settingsHref
-                      ? "bg-[#ECEFFE] text-indigo-600 font-semibold"
-                      : "text-slate-500 hover:text-slate-900 hover:bg-slate-50 font-medium"
+                      ? "bg-gradient-to-r from-sky-50 via-blue-50/70 to-amber-50/40 text-blue-700 font-semibold border-r-3 border-amber-500"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-amber-50/40 font-medium"
                   } ${collapsed ? "justify-center px-0" : ""}`}
                   title={collapsed ? "Pengaturan" : undefined}
                 >
-                  <Settings className="w-5 h-5 shrink-0 text-slate-400 group-hover:text-slate-600" />
+                  <Settings className="w-5 h-5 shrink-0 text-slate-400 group-hover:text-amber-600" />
                   {!collapsed && <span className="truncate">Pengaturan</span>}
                 </Link>
               )}
@@ -193,29 +201,56 @@ export default function DashboardSidebar({ role, nama, nim }: DashboardSidebarPr
           </div>
         </div>
 
-        {/* User Card at Bottom */}
-        {!collapsed && (
-          <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-3 px-1">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-600 to-blue-500 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
-              {nama.charAt(0).toUpperCase()}
+        {/* Mascot Greeting Mini Banner & User Profile */}
+        <div className="mt-4 space-y-3">
+          {!collapsed && (
+            <div className="p-3 rounded-2xl bg-gradient-to-br from-amber-50/80 via-sky-50/50 to-blue-50/60 border border-amber-200/60 shadow-2xs">
+              <div className="flex items-center gap-2.5">
+                <div className="relative w-9 h-9 shrink-0">
+                  <Image
+                    src="/maskot1.png"
+                    alt="Merpi Sisfora"
+                    width={36}
+                    height={36}
+                    className="object-contain drop-shadow-xs"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[11px] font-bold text-slate-900 block leading-tight">
+                    Merpi Siap Antar! 🕊️
+                  </span>
+                  <span className="text-[10px] text-amber-800/80 font-medium leading-tight block mt-0.5">
+                    Surat & izin diproses aman
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-slate-800 truncate leading-tight">
-                {nama}
-              </p>
-              <p className="text-[11px] text-slate-400 truncate leading-tight mt-0.5">
-                {ROLE_LABELS[role]}
-                {nim && ` • ${nim}`}
-              </p>
+          )}
+
+          {/* User Card at Bottom */}
+          {!collapsed && (
+            <div className="pt-3 border-t border-slate-100 flex items-center gap-3 px-1">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-600 via-sky-600 to-amber-500 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+                {nama.charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-slate-800 truncate leading-tight">
+                  {nama}
+                </p>
+                <p className="text-[11px] text-slate-400 truncate leading-tight mt-0.5">
+                  {ROLE_LABELS[role]}
+                  {nim && ` • ${nim}`}
+                </p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Collapse Toggle Button */}
       <button
         onClick={() => setCollapsed((c) => !c)}
-        className="absolute -right-3.5 top-8 w-7 h-7 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-300 shadow-xs transition-all cursor-pointer z-30"
+        className="absolute -right-3.5 top-8 w-7 h-7 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-blue-600 hover:border-amber-400 shadow-xs transition-all cursor-pointer z-30"
         title={collapsed ? "Buka Sidebar" : "Kecilkan Sidebar"}
       >
         {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}

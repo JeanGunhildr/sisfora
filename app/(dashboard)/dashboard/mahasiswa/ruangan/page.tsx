@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import Image from "next/image";
 import {
   Building2,
   Search,
@@ -494,10 +495,20 @@ export default function DaftarRuanganPage() {
           <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white rounded-3xl border border-slate-100 p-16 text-center">
-          <Building2 className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <p className="font-semibold text-slate-600">Tidak ada ruangan yang sesuai filter</p>
-          <p className="text-xs text-slate-400 mt-1">Coba ubah tanggal, jam kegiatan, atau kriteria pencarian Anda.</p>
+        <div className="bg-white rounded-3xl border border-amber-100/80 p-12 text-center shadow-xs">
+          <div className="relative w-24 h-24 mx-auto mb-3 drop-shadow-md">
+            <Image
+              src="/maskot1.png"
+              alt="Merpi"
+              width={96}
+              height={96}
+              className="object-contain"
+            />
+          </div>
+          <p className="font-bold text-slate-800 text-sm">Tidak ada ruangan yang cocok dengan kriteria</p>
+          <p className="text-xs text-amber-800/80 mt-1 max-w-sm mx-auto">
+            Merpi belum menemukan jadwal atau fasilitas yang sesuai. Coba sesuaikan tanggal, waktu, atau kata kunci pencarianmu ya!
+          </p>
         </div>
       ) : view === "grid" ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
