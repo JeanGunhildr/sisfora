@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Send, Sparkles, Loader2, Bot, User, Building2 } from "lucide-react";
+import Link from "next/link";
+import { Send, Sparkles, Loader2, Bot, User, Building2, ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 interface Message {
@@ -175,6 +176,21 @@ export default function AIPencarian() {
                               </span>
                             ))}
                           </div>
+                        )}
+                      </div>
+                      <div className="shrink-0 self-center">
+                        {room.status_ketersediaan === "tersedia" ? (
+                          <Link
+                            href={`/dashboard/mahasiswa/peminjaman/baru?ruangan=${room.id}`}
+                            className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-semibold flex items-center gap-1 shadow-2xs transition-colors"
+                          >
+                            <span>Ajukan</span>
+                            <ArrowRight size={12} />
+                          </Link>
+                        ) : (
+                          <span className="px-2.5 py-1 rounded-xl bg-slate-100 text-slate-400 text-[10px] font-medium">
+                            {room.status_ketersediaan === "ditahan" ? "Ditahan" : "Dipakai"}
+                          </span>
                         )}
                       </div>
                     </div>

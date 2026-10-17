@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Building2,
   Search,
@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 interface Fasilitas {
   id: string;
@@ -50,6 +51,10 @@ const STATUS_CONFIG: Record<
   string,
   { label: string; color: string; bg: string; border: string; dot: string }
 > = {
+const STATUS_CONFIG: Record<
+  string,
+  { label: string; color: string; bg: string; border: string; dot: string }
+> = {
   tersedia: {
     label: "Tersedia",
     color: "text-emerald-700",
@@ -66,6 +71,7 @@ const STATUS_CONFIG: Record<
   },
   digunakan: {
     label: "Sedang Digunakan",
+    label: "Sedang Digunakan",
     color: "text-rose-700",
     bg: "bg-rose-50",
     border: "border-rose-200",
@@ -75,16 +81,30 @@ const STATUS_CONFIG: Record<
 
 export default function DaftarRuanganPage() {
   const supabase = createClient();
-  const [rooms, setRooms] = useState<Ruangan[]>([]);
+  const searchParams = useSearchParams();
+
+  const [rawRooms, setRawRooms] = useState<any[]>([]);
+  const [allPengajuan, setAllPengajuan] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"grid" | "list">("grid");
+
+  // Filters
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("semua");
   const [filterLantai, setFilterLantai] = useState("semua");
   const [filterGedung, setFilterGedung] = useState("semua");
-  const [selectedRoom, setSelectedRoom] = useState<Ruangan | null>(null);
 
-  const fetchRooms = async () => {
+  // Filter Tanggal & Waktu (Sesuai tugas)
+  const [filterTanggal, setFilterTanggal] = useState(searchParams.get("tanggal") || "");
+  const [filterWaktuMulai, setFilterWaktuMulai] = useState(searchParams.get("mulai") || "");
+  const [filterWaktuSelesai, setFilterWaktuSelesai] = useState(searchParams.get("selesai") || "");
+
+  const [selectedRoom, setSelectedRoom] = useState<Ruangan | null>(null);
+  const [hasActiveSubmission, setHasActiveSubmission] = useState(false);
+  const [activeSubmissionNumber, setActiveSubmissionNumber] = useState<string | null>(null);
+
+  // Load rooms and active pengajuan
+  const fetchData = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -133,7 +153,7 @@ export default function DaftarRuanganPage() {
   };
 
   useEffect(() => {
-    fetchRooms();
+    fetchData();
   }, []);
 
   const gedungOptions = Array.from(new Set(rooms.map((r) => r.gedung?.nama).filter(Boolean)));
@@ -141,7 +161,7 @@ export default function DaftarRuanganPage() {
     (a, b) => (Number(a) || 0) - (Number(b) || 0)
   );
 
-  const filtered = rooms.filter((r) => {
+  const filtered = processedRooms.filter((r) => {
     const q = search.toLowerCase();
     const matchSearch =
       r.kode.toLowerCase().includes(q) ||
@@ -153,8 +173,28 @@ export default function DaftarRuanganPage() {
     return matchSearch && matchStatus && matchLantai && matchGedung;
   });
 
+  const resetFilters = () => {
+    setSearch("");
+    setFilterStatus("semua");
+    setFilterLantai("semua");
+    setFilterGedung("semua");
+    setFilterTanggal("");
+    setFilterWaktuMulai("");
+    setFilterWaktuSelesai("");
+  };
+
+  // Helper untuk membuat link pengajuan dengan query params terisi otomatis jika ada filter
+  const getBookingUrl = (roomId: string) => {
+    const params = new URLSearchParams();
+    params.set("ruangan", roomId);
+    if (filterTanggal) params.set("tanggal", filterTanggal);
+    if (filterWaktuMulai) params.set("mulai", filterWaktuMulai);
+    if (filterWaktuSelesai) params.set("selesai", filterWaktuSelesai);
+    return `/dashboard/mahasiswa/peminjaman/baru?${params.toString()}`;
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-12">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
         <div>
@@ -273,18 +313,20 @@ export default function DaftarRuanganPage() {
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+          <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
         </div>
       ) : filtered.length === 0 ? (
         <div className="bg-white rounded-3xl border border-slate-100 p-16 text-center">
           <Building2 className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <p className="font-semibold text-slate-600">Tidak ada ruangan ditemukan</p>
-          <p className="text-xs text-slate-400 mt-1">Coba ubah filter atau kata kunci pencarian.</p>
+          <p className="font-semibold text-slate-600">Tidak ada ruangan yang sesuai filter</p>
+          <p className="text-xs text-slate-400 mt-1">Coba ubah tanggal, jam kegiatan, atau kriteria pencarian Anda.</p>
         </div>
       ) : view === "grid" ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
           {filtered.map((room) => {
             const status = STATUS_CONFIG[room.status_ketersediaan] || STATUS_CONFIG.tersedia;
-            const fasilitasList = room.ruangan_fasilitas?.map((rf) => rf.fasilitas).filter(Boolean) || [];
+            const fasilitasList = room.ruangan_fasilitas?.map((rf: any) => rf.fasilitas?.nama).filter(Boolean) || [];
 
             return (
               <div
@@ -308,9 +350,13 @@ export default function DaftarRuanganPage() {
                     <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
                     {status.label}
                   </div>
+                  <span className="absolute bottom-3 left-3 text-xs font-bold px-2.5 py-1 rounded-xl bg-black/60 text-white backdrop-blur-md">
+                    {room.kode}
+                  </span>
                 </div>
 
                 {/* Card Body */}
+                <div className="p-5 flex-1 flex flex-col">
                 <div className="p-5 flex-1 flex flex-col">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div>
@@ -332,6 +378,7 @@ export default function DaftarRuanganPage() {
 
                   <div className="flex items-center gap-3 text-xs text-slate-500 my-2">
                     <span className="flex items-center gap-1">
+                      <Users size={12} className="text-slate-400" />
                       <Users size={12} className="text-slate-400" />
                       {room.kapasitas} orang
                     </span>
@@ -356,7 +403,7 @@ export default function DaftarRuanganPage() {
                           key={f.id}
                           className="px-2.5 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-medium rounded-md"
                         >
-                          {f.nama}
+                          {fName}
                         </span>
                       ))}
                       {fasilitasList.length > 3 && (
@@ -384,6 +431,7 @@ export default function DaftarRuanganPage() {
       ) : (
         /* List View */
         <div className="bg-white rounded-3xl border border-slate-100 shadow-2xs overflow-hidden">
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-2xs overflow-hidden">
           <table className="w-full text-xs">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-100 text-slate-500 font-semibold uppercase tracking-wider">
@@ -409,7 +457,7 @@ export default function DaftarRuanganPage() {
                     <td className="py-3.5 px-4 text-slate-600">{room.kapasitas} orang</td>
                     <td className="py-3.5 px-4">
                       <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold border ${status.bg} ${status.color} ${status.border}`}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${status.bg} ${status.color} ${status.border}`}
                       >
                         <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
                         {status.label}
@@ -451,6 +499,7 @@ export default function DaftarRuanganPage() {
                 />
               ) : (
                 <Building2 className="w-16 h-16 text-indigo-300" />
+                <Building2 className="w-16 h-16 text-indigo-300" />
               )}
               <button
                 onClick={() => setSelectedRoom(null)}
@@ -472,7 +521,7 @@ export default function DaftarRuanganPage() {
                     )}
                   </div>
                   <span
-                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${
+                    className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${
                       STATUS_CONFIG[selectedRoom.status_ketersediaan]?.bg
                     } ${STATUS_CONFIG[selectedRoom.status_ketersediaan]?.color} ${
                       STATUS_CONFIG[selectedRoom.status_ketersediaan]?.border
@@ -483,7 +532,7 @@ export default function DaftarRuanganPage() {
                 </div>
 
                 {selectedRoom.deskripsi && (
-                  <p className="text-xs text-slate-600 mt-2 leading-relaxed">{selectedRoom.deskripsi}</p>
+                  <p className="text-xs text-slate-600 mt-2.5 leading-relaxed">{selectedRoom.deskripsi}</p>
                 )}
               </div>
 
@@ -507,7 +556,7 @@ export default function DaftarRuanganPage() {
                 <div>
                   <p className="text-xs font-semibold text-slate-700 mb-2">Daftar Fasilitas:</p>
                   <div className="flex flex-wrap gap-2">
-                    {selectedRoom.ruangan_fasilitas.map((rf) => (
+                    {selectedRoom.ruangan_fasilitas.map((rf: any, idx: number) => (
                       <span
                         key={rf.fasilitas.id}
                         className="px-3 py-1 bg-indigo-50 text-indigo-700 text-[11px] font-medium rounded-full border border-indigo-100"
@@ -527,7 +576,7 @@ export default function DaftarRuanganPage() {
               <div className="flex gap-3 pt-2">
                 <button
                   onClick={() => setSelectedRoom(null)}
-                  className="flex-1 py-2.5 rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                  className="flex-1 py-2.5 rounded-2xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
                 >
                   Tutup
                 </button>
