@@ -1,35 +1,50 @@
 "use client";
 
-import React, { useState } from "react";
-import { MessageSquare, Send, Star, CheckCircle2, Loader2 } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { MessageSquare, Send, Star, CheckCircle2, Loader2, Building2, AppWindow, Clock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
-const FEEDBACK_CATEGORIES = [
-  { value: "fasilitas", label: "Fasilitas Ruangan" },
-  { value: "proses", label: "Proses Pengajuan" },
-  { value: "layanan", label: "Layanan Admin" },
-  { value: "aplikasi", label: "Aplikasi SISFORA" },
-  { value: "lainnya", label: "Lainnya" },
-];
+interface RuanganOption {
+  id: string;
+  kode: string;
+  gedung?: { nama: string } | null;
+}
 
 export default function FeedbackPage() {
   const supabase = createClient();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
-  const [kategori, setKategori] = useState("fasilitas");
-  const [pesan, setPesan] = useState("");
+  const [jenisFeedback, setJenisFeedback] = useState<"ruangan" | "aplikasi">("ruangan");
+  const [ruanganId, setRuanganId] = useState<string>("");
+  const [komentar, setKentar] = useState("");
+  const [rooms, setRooms] = useState<RuanganOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    async function loadRooms() {
+      const { data } = await supabase
+        .from("ruangan")
+        .select("id, kode, gedung:gedung_id(nama)")
+        .eq("status_aktif", true)
+        .order("kode");
+
+      if (data) {
+        setRooms(data as unknown as RuanganOption[]);
+      }
+    }
+    loadRooms();
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!pesan.trim()) {
-      setError("Pesan feedback tidak boleh kosong.");
+    if (!komentar.trim()) {
+      setError("Pesan atau komentar feedback tidak boleh kosong.");
       return;
     }
     if (rating === 0) {
-      setError("Mohon berikan rating terlebih dahulu.");
+      setError("Mohon berikan rating bintang terlebih dahulu.");
       return;
     }
 
@@ -41,12 +56,13 @@ export default function FeedbackPage() {
         data: { user },
       } = await supabase.auth.getUser();
 
-      if (!user) throw new Error("Anda harus login.");
+      if (!user) throw new Error("Sesi login tidak ditemukan. Silakan login kembali.");
 
       const { error: insertError } = await supabase.from("feedback").insert({
-        pengirim_id: user.id,
-        kategori,
-        pesan: pesan.trim(),
+        user_id: user.id,
+        jenis_feedback: jenisFeedback,
+        ruangan_id: jenisFeedback === "ruangan" && ruanganId ? ruanganId : null,
+        komentar: komentar.trim(),
         rating,
       });
 
@@ -54,8 +70,9 @@ export default function FeedbackPage() {
 
       setSuccess(true);
       setRating(0);
-      setPesan("");
-      setKategori("fasilitas");
+      setKentar("");
+      setRuanganId("");
+      setJenisFeedback("ruangan");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Gagal mengirim feedback.");
     } finally {
@@ -63,51 +80,51 @@ export default function FeedbackPage() {
     }
   };
 
-  const ratingLabels = ["", "Buruk", "Kurang Baik", "Cukup", "Baik", "Sangat Baik"];
+  const ratingLabels = ["", "Sangat Buruk", "Kurang Memuaskan", "Cukup Baik", "Bagus", "Sangat Memuaskan"];
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-2xl mx-auto">
       <div>
-        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Feedback</h1>
+        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Feedback & Ulasan</h1>
         <p className="text-sm text-slate-500 mt-1">
-          Bantu kami meningkatkan layanan dengan berbagi pengalaman Anda
+          Bantu kami meningkatkan kualitas fasilitas dan layanan aplikasi SISFORA Fakultas Teknik
         </p>
       </div>
 
       {success ? (
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-xs p-12 text-center">
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-2xs p-12 text-center animate-in fade-in zoom-in-95">
           <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
-            <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+            <CheckCircle2 className="w-8 h-8 text-emerald-600" />
           </div>
-          <h2 className="text-xl font-bold text-slate-900 mb-2">Terima Kasih!</h2>
-          <p className="text-sm text-slate-500 mb-6">
-            Feedback Anda telah berhasil dikirim dan akan kami tinjau segera.
+          <h2 className="text-xl font-bold text-slate-900 mb-2">Terima Kasih atas Masukan Anda!</h2>
+          <p className="text-xs sm:text-sm text-slate-500 mb-6 max-w-md mx-auto leading-relaxed">
+            Feedback Anda telah tercatat di sistem kami dan akan dievaluasi oleh Tim Administrasi Fakultas.
           </p>
           <button
             onClick={() => setSuccess(false)}
-            className="px-6 py-2.5 rounded-full text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors cursor-pointer"
+            className="px-6 py-2.5 rounded-full text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors cursor-pointer shadow-sm"
           >
             Kirim Feedback Lainnya
           </button>
         </div>
       ) : (
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-xs overflow-hidden">
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-2xs overflow-hidden">
           {/* Header Banner */}
-          <div className="bg-gradient-to-r from-blue-700 to-sky-500 px-6 py-5 flex items-center gap-3">
+          <div className="bg-gradient-to-r from-indigo-600 to-blue-600 px-6 py-5 flex items-center gap-3 text-white">
             <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center">
               <MessageSquare className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white">Form Feedback SISFORA</h2>
-              <p className="text-[11px] text-blue-100/80">Pendapat Anda sangat berarti bagi pengembangan kami</p>
+              <h2 className="text-sm font-bold text-white">Formulir Evaluasi & Ulasan</h2>
+              <p className="text-[11px] text-indigo-100">Bebas diisi untuk kategori ruangan maupun performa aplikasi</p>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Rating Stars */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">
-                Penilaian Keseluruhan
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                Penilaian Kepuasan
               </label>
               <div className="flex items-center gap-2">
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -123,76 +140,107 @@ export default function FeedbackPage() {
                       className={`w-8 h-8 transition-colors ${
                         star <= (hoverRating || rating)
                           ? "text-amber-400 fill-amber-400"
-                          : "text-slate-300"
+                          : "text-slate-200"
                       }`}
                     />
                   </button>
                 ))}
                 {(hoverRating || rating) > 0 && (
-                  <span className="ml-2 text-sm font-semibold text-amber-500">
+                  <span className="ml-2 text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-md">
                     {ratingLabels[hoverRating || rating]}
                   </span>
                 )}
               </div>
             </div>
 
-            {/* Kategori */}
+            {/* Kategori Feedback: 'ruangan' atau 'aplikasi' (Sesuai Enum DB) */}
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                Kategori Feedback
+                Kategori Evaluasi
               </label>
-              <div className="flex flex-wrap gap-2">
-                {FEEDBACK_CATEGORIES.map((cat) => (
-                  <button
-                    key={cat.value}
-                    type="button"
-                    onClick={() => setKategori(cat.value)}
-                    className={`px-4 py-2 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
-                      kategori === cat.value
-                        ? "bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-500/20"
-                        : "bg-slate-50 text-slate-600 border-slate-200 hover:border-blue-300 hover:text-blue-600"
-                    }`}
-                  >
-                    {cat.label}
-                  </button>
-                ))}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setJenisFeedback("ruangan")}
+                  className={`p-3.5 rounded-2xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                    jenisFeedback === "ruangan"
+                      ? "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-2xs font-bold"
+                      : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  <Building2 size={16} />
+                  <span>Fasilitas Ruangan</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setJenisFeedback("aplikasi");
+                    setRuanganId("");
+                  }}
+                  className={`p-3.5 rounded-2xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                    jenisFeedback === "aplikasi"
+                      ? "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-2xs font-bold"
+                      : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  <AppWindow size={16} />
+                  <span>Sistem / Aplikasi SISFORA</span>
+                </button>
               </div>
             </div>
 
-            {/* Pesan */}
+            {/* Pilihan Ruangan jika jenisFeedback === 'ruangan' */}
+            {jenisFeedback === "ruangan" && (
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                  Pilih Ruangan <span className="text-slate-400 font-normal">(Opsional)</span>
+                </label>
+                <select
+                  value={ruanganId}
+                  onChange={(e) => setRuanganId(e.target.value)}
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                >
+                  <option value="">Semua Ruangan / Fasilitas Umum Fakultas</option>
+                  {rooms.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      Ruang {r.kode} — {Array.isArray(r.gedung) ? r.gedung[0]?.nama : r.gedung?.nama || "Fakultas"}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Komentar */}
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                Pesan Feedback
+                Komentar & Saran Masukan
               </label>
               <textarea
-                rows={5}
-                value={pesan}
-                onChange={(e) => setPesan(e.target.value)}
-                placeholder="Ceritakan pengalaman Anda menggunakan SISFORA, hal yang perlu diperbaiki, atau saran untuk pengembangan..."
-                className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                rows={4}
+                value={komentar}
+                onChange={(e) => setKentar(e.target.value)}
+                maxLength={1000}
+                placeholder="Tuliskan pengalaman Anda, kebersihan ruangan, AC/proyektor, atau kendala peminjaman yang dihadapi..."
+                className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all resize-none text-slate-800"
               />
-              <p className="text-[10px] text-slate-400 mt-1.5 text-right">{pesan.length}/1000 karakter</p>
+              <p className="text-[10px] text-slate-400 mt-1 text-right">{komentar.length}/1000 karakter</p>
             </div>
 
-            {/* Error */}
+            {/* Error Message */}
             {error && (
               <div className="p-3 bg-rose-50 border border-rose-100 rounded-2xl text-xs text-rose-700 font-medium">
                 {error}
               </div>
             )}
 
-            {/* Submit */}
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white shadow-md shadow-blue-500/20 transition-all cursor-pointer disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-xs sm:text-sm font-bold bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white shadow-md shadow-indigo-500/20 transition-all cursor-pointer disabled:cursor-not-allowed"
             >
-              {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-              {loading ? "Mengirim..." : "Kirim Feedback"}
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              <span>{loading ? "Mengirim..." : "Kirim Masukan"}</span>
             </button>
           </form>
         </div>
