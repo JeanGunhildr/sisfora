@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 "use client";
 
 import React, { useState } from "react";
@@ -215,3 +216,4 @@ if (!data.user) {
     </div>
   );
 }
+
