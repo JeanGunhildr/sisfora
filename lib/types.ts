@@ -1,5 +1,5 @@
 export type RoleUser = "mahasiswa" | "ketua_organisasi" | "admin" | "wd3";
-export type StatusVerifikasi = "menunggu" | "diverifikasi" | "ditolak";
+export type StatusVerifikasi = "menunggu" | "disetujui" | "ditolak";
 
 export interface UserProfile {
   id: string;
@@ -29,3 +29,4 @@ export const ROLE_DASHBOARDS: Record<RoleUser, string> = {
   admin: "/dashboard/admin",
   wd3: "/dashboard/wd3",
 };
+

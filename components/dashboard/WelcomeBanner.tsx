@@ -61,7 +61,7 @@ export default function WelcomeBanner({
                     Status Akun: <strong className="text-amber-200">Menunggu Verifikasi Admin</strong> (Bukti KTM sedang ditinjau)
                   </span>
                 </div>
-              ) : statusVerifikasi === "disetujui" ? (
+              ) : statusVerifikasi === "diverifikasi" ? (
                 <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 text-xs font-medium text-white shadow-sm">
                   <CheckCircle2 className="w-4 h-4 text-emerald-300 shrink-0" />
                   <span>
