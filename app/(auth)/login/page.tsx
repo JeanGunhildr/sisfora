@@ -86,14 +86,14 @@ function LoginForm() {
         data.user.user_metadata?.role ||
         "mahasiswa") as RoleUser;
 
-      // ATURAN LOGIN: HANYA MAHASISWA BERSTATUS 'diverifikasi' YANG BISA LOGIN
+      // ATURAN LOGIN: HANYA MAHASISWA BERSTATUS 'disetujui' YANG BISA LOGIN
       if (userRole === "mahasiswa") {
         const statusVerifikasi = profile.status_verifikasi;
 
         if (statusVerifikasi === "menunggu") {
           await supabase.auth.signOut();
           setWarningMsg(
-            "Akun Anda sedang menunggu persetujuan Admin (status: menunggu). Berkas Kartu Tanda Mahasiswa (KTM) Anda sedang ditinjau. Anda belum bisa masuk hingga akun diverifikasi oleh admin."
+            "Akun Anda sedang menunggu persetujuan Admin (status: menunggu). Berkas Kartu Tanda Mahasiswa (KTM) Anda sedang ditinjau. Anda belum bisa masuk hingga akun disetujui oleh admin."
           );
           setLoading(false);
           return;
@@ -114,14 +114,14 @@ function LoginForm() {
         if (statusVerifikasi !== "disetujui") {
           await supabase.auth.signOut();
           setWarningMsg(
-            `Akun Anda belum berstatus diverifikasi (status: ${statusVerifikasi}). Mohon hubungi admin.`
+            `Akun Anda belum berstatus disetujui (status: ${statusVerifikasi}). Mohon hubungi admin.`
           );
           setLoading(false);
           return;
         }
       }
 
-      // Jika role lain (admin, wd3, ketua_organisasi) atau mahasiswa sudah disetujui (diverifikasi)
+      // Jika role lain (admin, wd3, ketua_organisasi) atau mahasiswa sudah disetujui
       const redirectPath = ROLE_DASHBOARDS[userRole] || "/dashboard/mahasiswa";
       window.location.href = redirectPath;
     } catch (err: unknown) {

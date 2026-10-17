@@ -51,7 +51,9 @@ const NAV_ITEMS: Record<RoleUser, NavItem[]> = {
   ],
   admin: [
     { label: "Dashboard", href: "/dashboard/admin", icon: LayoutDashboard },
-    { label: "Verifikasi Akun", href: "/dashboard/admin", icon: Users },
+    { label: "Verifikasi Akun", href: "/dashboard/admin/verifikasi", icon: Users },
+    { label: "Kelola Gedung", href: "/dashboard/admin/gedung", icon: Building2 },
+    { label: "Kelola Ruangan", href: "/dashboard/admin/ruangan", icon: Compass },
     { label: "Monitoring Peminjaman", href: "/dashboard/admin/peminjaman", icon: ClipboardList },
     { label: "Monitoring Feedback", href: "/dashboard/admin/feedback", icon: MessageSquare },
   ],
@@ -90,7 +92,7 @@ export default function DashboardSidebar({ role, nama, nim }: DashboardSidebarPr
 
   return (
     <aside
-      className={`relative flex flex-col shrink-0 min-h-screen bg-white border-r border-slate-100 transition-all duration-300 z-20 ${
+      className={`relative flex flex-col shrink-0 h-screen overflow-y-auto bg-white border-r border-slate-100 transition-all duration-300 z-20 ${
         collapsed ? "w-[76px]" : "w-64"
       }`}
     >

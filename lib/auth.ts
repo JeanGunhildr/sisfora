@@ -34,11 +34,11 @@ export async function requireAuth(): Promise<{ user: any; profile: UserProfile }
     ? "ditolak"
     : "menunggu";
 
-  // Mahasiswa harus berstatus 'diverifikasi' untuk dapat mengakses area dashboard
+  // Mahasiswa harus berstatus 'disetujui' untuk dapat mengakses area dashboard
   if (role === "mahasiswa" && statusVerifikasi !== "disetujui") {
-  await supabase.auth.signOut();
-  redirect(`/login?unverified=true&status=${statusVerifikasi}`);
-}
+    await supabase.auth.signOut();
+    redirect(`/login?unverified=true&status=${statusVerifikasi}`);
+  }
 
   const safeProfile: UserProfile = {
     id: user.id,
